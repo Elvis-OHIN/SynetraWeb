@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34511.84
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SynetraWeb", "SynetraWeb\SynetraWeb\SynetraWeb.csproj", "{AE96277B-D51E-4111-B055-EE13FFCDF80E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SynetraWeb.Client", "SynetraWeb\SynetraWeb.Client\SynetraWeb.Client.csproj", "{897A5146-E97E-434D-A0E1-B12E010A39A1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AE96277B-D51E-4111-B055-EE13FFCDF80E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE96277B-D51E-4111-B055-EE13FFCDF80E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE96277B-D51E-4111-B055-EE13FFCDF80E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE96277B-D51E-4111-B055-EE13FFCDF80E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{897A5146-E97E-434D-A0E1-B12E010A39A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{897A5146-E97E-434D-A0E1-B12E010A39A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{897A5146-E97E-434D-A0E1-B12E010A39A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{897A5146-E97E-434D-A0E1-B12E010A39A1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CEF8ACB0-881E-47C5-BDBB-4D1205A97936}
+	EndGlobalSection
+EndGlobal
