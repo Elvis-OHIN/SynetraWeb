@@ -89,13 +89,19 @@
     {
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
-        if (result.Succeeded)
+        var httpClient = new HttpClient();
+        var login = new SynetraWeb.Client.Login();
+        login.Password = Input.Password;
+        login.Email = Input.Email;
+        var result = await httpClient.PostAsJsonAsync("https://localhost:7082/login", login);
+        //var response = await httpClient.PostJsonAsync<string>("https://localhost:7082/reg", loginModel);
+        //var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        if (result.IsSuccessStatusCode)
         {
             Logger.LogInformation("User logged in.");
             RedirectManager.RedirectTo(ReturnUrl);
         }
-        else if (result.RequiresTwoFactor)
+        /*else if (result.RequiresTwoFactor)
         {
             RedirectManager.RedirectTo(
                 "Account/LoginWith2fa",
@@ -105,7 +111,7 @@
         {
             Logger.LogWarning("User account locked out.");
             RedirectManager.RedirectTo("Account/Lockout");
-        }
+        }*/
         else
         {
             errorMessage = "Error: Invalid login attempt.";
