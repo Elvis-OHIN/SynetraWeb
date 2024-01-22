@@ -1,0 +1,75 @@
+﻿@page "/parcs"
+
+@using SynetraWeb.Client.Models;
+@using SynetraWeb.Client.Services;
+@rendermode InteractiveAuto
+
+<h3>My Models</h3>
+<button class="btn btn-success" @onclick="AddModel">Add New Parcs</button>
+@if (parcs == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>IsActive</th>
+                <th>IsEnable</th>
+                <th>CreatedDate</th>
+                <th>UpdatedDate</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var parc in parcs)
+            {
+                <tr>
+                    <td>@parc.Id</td>
+                    <td>@parc.Name</td>
+                    <td>@parc.IsActive</td>
+                    <td>@parc.IsEnable</td>
+                    <td>@parc.CreatedDate</td>
+                    <td>@parc.UpdatedDate</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => EditModel(parc)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteModel(parc.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@code {
+    private List<Parc> parcs;
+    private Parc selectedModel;
+    private ParcService ParcService;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ParcService = new ParcService();
+        parcs = await ParcService.GetAllAsync();
+    }
+
+    private void EditModel(Parc parc)
+    {
+        selectedModel = parc;
+        // Naviguez vers la page d'édition ou affichez un formulaire d'édition dans ce composant.
+    }
+    private void AddModel()
+    {
+        // Naviguer vers la page d'ajout, par exemple, "/addmymodel"
+        //NavigationManager.NavigateTo("/addmymodel");
+    }
+
+    private  async void DeleteModel(int id)
+    {
+       await ParcService.DeleteAsync(id);
+       parcs = await ParcService.GetAllAsync();
+    }
+}

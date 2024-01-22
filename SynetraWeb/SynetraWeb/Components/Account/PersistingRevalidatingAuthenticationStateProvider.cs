@@ -93,7 +93,7 @@ namespace SynetraWeb.Components.Account
                 {
                     state.PersistAsJson(nameof(UserInfo), new UserInfo
                     {
-                        UserId = userId,
+                        Id = userId,
                         Email = email,
                     });
                 }

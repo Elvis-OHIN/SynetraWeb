@@ -1,15 +1,17 @@
-﻿@page "/Account/Login"
+﻿@layout Layout.LoginLayout; 
+@page "/Account/Login"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
+@using SynetraWeb.Client.Authentications
 @using SynetraWeb.Data
 
 @inject SignInManager<ApplicationUser> SignInManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
-
+@inject AuthenticationStateProvider authStateProvider
 <PageTitle>Log in</PageTitle>
 
 <h1>Log in</h1>
@@ -89,33 +91,13 @@
     {
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var httpClient = new HttpClient();
-        var login = new SynetraWeb.Client.Login();
+        var login = new SynetraWeb.Client.LoginModel();
         login.Password = Input.Password;
         login.Email = Input.Email;
-        var result = await httpClient.PostAsJsonAsync("https://localhost:7082/login", login);
-        //var response = await httpClient.PostJsonAsync<string>("https://localhost:7082/reg", loginModel);
-        //var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
-        if (result.IsSuccessStatusCode)
-        {
-            Logger.LogInformation("User logged in.");
-            RedirectManager.RedirectTo(ReturnUrl);
-        }
-        /*else if (result.RequiresTwoFactor)
-        {
-            RedirectManager.RedirectTo(
-                "Account/LoginWith2fa",
-                new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
-        }
-        else if (result.IsLockedOut)
-        {
-            Logger.LogWarning("User account locked out.");
-            RedirectManager.RedirectTo("Account/Lockout");
-        }*/
-        else
-        {
-            errorMessage = "Error: Invalid login attempt.";
-        }
+        login.TwoFactorCode = "string";
+        login.TwoFactorRecoveryCode = "string";
+        var customAuthProvider = (CookieAuthenticationStateProvider)authStateProvider;
+        await customAuthProvider.LoginAndGetAuthenticationState(login);  
     }
 
     private sealed class InputModel
