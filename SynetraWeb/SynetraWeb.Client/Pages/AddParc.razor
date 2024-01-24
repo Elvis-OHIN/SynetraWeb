@@ -1,0 +1,41 @@
+@using SynetraWeb.Client.Models
+<h3>AddParc</h3>
+
+<form>
+    <div class="form-group">
+        <label for="Name">Name</label>
+        <input type="text" class="form-control" id="Name" @bind="computer.Name">
+    </div>
+
+    <button type="submit" class="btn btn-primary" @onclick="AddNewComputer">Save</button>
+</form>
+
+@code {
+    private Computer computer = new Computer(); // Initialize a new Computer object
+
+    private async Task AddNewComputer()
+    {
+        try
+        {
+            // Send a POST request to your API to add the computer
+            /*var response = await HttpClient.PostJsonAsync<Computer>("api/computers", computer);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Computer added successfully
+                await JSRuntime.InvokeVoidAsync("alert", "Computer added successfully.");
+            }
+            else
+            {
+                // Handle error if needed
+                await JSRuntime.InvokeVoidAsync("alert", "Error adding computer.");
+            }*/
+        }
+        catch (Exception ex)
+        {
+            // Handle exception if any
+            //await JSRuntime.InvokeVoidAsync("alert", $"An error occurred: {ex.Message}");
+        }
+    }
+
+}

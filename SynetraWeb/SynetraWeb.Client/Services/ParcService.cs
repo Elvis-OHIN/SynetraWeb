@@ -1,4 +1,4 @@
-﻿using SynetraWeb.Client.Authentications;
+using SynetraWeb.Client.Authentications;
 using SynetraWeb.Client.Models;
 using System.IO;
 using System.Net.Http;
@@ -24,22 +24,22 @@ namespace SynetraWeb.Client.Services
 
         public async Task<Parc> GetByIdAsync(int id)
         {
-            return await _httpClient.GetFromJsonAsync<Parc>($"api/Parcs/{id}");
+            return await _httpClient.GetFromJsonAsync<Parc>($"https://localhost:7082/api/Parcs/{id}");
         }
 
         public async Task CreateAsync(Parc parc)
         {
-            await _httpClient.PostAsJsonAsync("api/Parcs", parc);
+            await _httpClient.PostAsJsonAsync("https://localhost:7082/api/Parcs", parc);
         }
 
         public async Task UpdateAsync(Parc parc)
         {
-            await _httpClient.PutAsJsonAsync($"api/Parcs/{parc.Id}", parc);
+            await _httpClient.PutAsJsonAsync($"https://localhost:7082/api/Parcs/{parc.Id}", parc);
         }
 
         public async Task DeleteAsync(int id)
         {
-            await _httpClient.DeleteAsync($"api/Parcs/{id}");
+            await _httpClient.DeleteAsync($"https://localhost:7082/api/Parcs/{id}");
         }
     }
 }

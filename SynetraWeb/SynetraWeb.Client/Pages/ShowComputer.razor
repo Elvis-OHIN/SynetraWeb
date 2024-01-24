@@ -1,0 +1,69 @@
+@page "/computer/{computerId:int}"
+@using SynetraWeb.Client.Models
+@using SynetraWeb.Client.Services
+@rendermode InteractiveAuto
+
+<h3>Computer Details</h3>
+
+@if (computer != null)
+{
+    <div>
+        <dl class="row">
+            <dt class="col-sm-2">ID</dt>
+            <dd class="col-sm-10">@computer.Id</dd>
+
+            <dt class="col-sm-2">Name</dt>
+            <dd class="col-sm-10">@computer.Name</dd>
+
+            <dt class="col-sm-2">ID Product</dt>
+            <dd class="col-sm-10">@computer.IDProduct</dd>
+
+            <dt class="col-sm-2">Operating System</dt>
+            <dd class="col-sm-10">@computer.OperatingSystem</dd>
+
+            <dt class="col-sm-2">Os</dt>
+            <dd class="col-sm-10">@computer.Os</dd>
+
+            <dt class="col-sm-2">Carte Mere</dt>
+            <dd class="col-sm-10">@computer.CarteMere</dd>
+
+            <dt class="col-sm-2">GPU</dt>
+            <dd class="col-sm-10">@computer.GPU</dd>
+
+            <dt class="col-sm-2">Room</dt>
+            <dd class="col-sm-10">@computer.Room?.Name ?? "N/A"</dd>
+
+            <dt class="col-sm-2">Statut</dt>
+            <dd class="col-sm-10">@computer.Statut</dd>
+
+            <dt class="col-sm-2">IsActive</dt>
+            <dd class="col-sm-10">@computer.IsActive</dd>
+
+            <dt class="col-sm-2">IsEnable</dt>
+            <dd class="col-sm-10">@computer.IsEnable</dd>
+
+            <dt class="col-sm-2">Created Date</dt>
+            <dd class="col-sm-10">@computer.CreatedDate.ToString("MM/dd/yyyy HH:mm:ss")</dd>
+
+            <dt class="col-sm-2">Updated Date</dt>
+            <dd class="col-sm-10">@computer.UpdatedDate?.ToString("MM/dd/yyyy HH:mm:ss") ?? "N/A"</dd>
+        </dl>
+    </div>
+}
+else
+{
+    <p>Loading...</p>
+}
+
+@code {
+    [Parameter]
+    public int computerId { get; set; }
+
+    private Computer computer;
+    private ComputerService ComputerService = new ComputerService();
+
+    protected override async Task OnInitializedAsync()
+    {
+        computer = await ComputerService.GetByIdAsync(computerId);
+    }
+}

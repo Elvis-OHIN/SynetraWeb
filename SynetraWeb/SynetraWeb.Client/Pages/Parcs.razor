@@ -1,11 +1,12 @@
-﻿@page "/parcs"
+@page "/parcs"
 
 @using SynetraWeb.Client.Models;
 @using SynetraWeb.Client.Services;
 @rendermode InteractiveAuto
+@inject NavigationManager NavigationManager
 
 <h3>My Models</h3>
-<button class="btn btn-success" @onclick="AddModel">Add New Parcs</button>
+<button class="btn btn-success" @onclick="AddParc">Add New Parcs</button>
 @if (parcs == null)
 {
     <p>Loading...</p>
@@ -35,6 +36,7 @@ else
                     <td>@parc.CreatedDate</td>
                     <td>@parc.UpdatedDate</td>
                     <td>
+                        <button class="btn btn-warning" @onclick="() => ShowParc(parc.Id)">Voir</button>
                         <button class="btn btn-primary" @onclick="() => EditModel(parc)">Edit</button>
                         <button class="btn btn-danger" @onclick="() => DeleteModel(parc.Id)">Delete</button>
                     </td>
@@ -61,10 +63,14 @@ else
         selectedModel = parc;
         // Naviguez vers la page d'édition ou affichez un formulaire d'édition dans ce composant.
     }
-    private void AddModel()
+
+    private void ShowParc(int parcId)
     {
-        // Naviguer vers la page d'ajout, par exemple, "/addmymodel"
-        //NavigationManager.NavigateTo("/addmymodel");
+        NavigationManager.NavigateTo($"/parc/{parcId}");
+    }
+    private void AddParc()
+    {
+        NavigationManager.NavigateTo("/parc");
     }
 
     private  async void DeleteModel(int id)

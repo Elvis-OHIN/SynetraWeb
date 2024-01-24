@@ -1,0 +1,92 @@
+@page "/computers"
+@using SynetraWeb.Client.Models;
+@using SynetraWeb.Client.Services;
+@inject NavigationManager NavigationManager
+@rendermode InteractiveAuto
+
+<h3>Computers</h3>
+<button class="btn btn-success" @onclick="AddModel">Add New Computers</button>
+@if (computers == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>ID Product</th>
+                <th>Operating System</th>
+                <th>Os</th>
+                <th>Carte Mere</th>
+                <th>GPU</th>
+                <th>Room</th>
+                <th>Statut</th>
+                <th>IsActive</th>
+                <th>IsEnable</th>
+                <th>Created Date</th>
+                <th>Updated Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var computer in computers)
+            {
+                <tr>
+                    <td>@computer.Name</td>
+                    <td>@computer.IDProduct</td>
+                    <td>@computer.OperatingSystem</td>
+                    <td>@computer.Os</td>
+                    <td>@computer.CarteMere</td>
+                    <td>@computer.GPU</td>
+                    <td>@(computer.Room != null ? computer.Room.Name : "N/A")</td>
+                    <td>@computer.Statut</td>
+                    <td>@computer.IsActive</td>
+                    <td>@computer.IsEnable</td>
+                    <td>@computer.CreatedDate.ToString("MM/dd/yyyy HH:mm:ss")</td>
+                    <td>@(computer.UpdatedDate != null ? computer.UpdatedDate.Value.ToString("MM/dd/yyyy HH:mm:ss") : "N/A")</td>
+                    <td>
+                        <button class="btn btn-warning" @onclick="() => ShowComputer(computer.Id)">Voir</button>
+                        <button class="btn btn-primary" @onclick="() => EditModel(computer)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteModel(computer.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@code {
+    private List<Computer> computers;
+    private Computer selectedModel;
+    private ComputerService ComputerService;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ComputerService = new ComputerService();
+        computers = await ComputerService.GetAllAsync();
+    }
+    private void ShowComputer(int computerId)
+    {
+        NavigationManager.NavigateTo($"/computer/{computerId}");
+    }
+
+    private void EditModel(Computer Computer)
+    {
+        selectedModel = Computer;
+        // Naviguez vers la page d'édition ou affichez un formulaire d'édition dans ce composant.
+    }
+    private void AddModel()
+    {
+        // Naviguer vers la page d'ajout, par exemple, "/addmymodel"
+        //NavigationManager.NavigateTo("/addmymodel");
+    }
+
+    private async void DeleteModel(int id)
+    {
+        await ComputerService.DeleteAsync(id);
+        computers = await ComputerService.GetAllAsync();
+    }
+}
