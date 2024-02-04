@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor;
+using MudBlazor.Services;
 using SynetraWeb.Client.Pages;
 using SynetraWeb.Client.Services;
 using SynetraWeb.Components;
 using SynetraWeb.Components.Account;
+using SynetraWeb.Components.Hubs;
 using SynetraWeb.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -40,6 +44,23 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 builder.Services.AddControllers();
+builder.Services.AddMudServices(config =>
+{
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.TopRight;
+    config.SnackbarConfiguration.ShowCloseIcon = true;
+    config.SnackbarConfiguration.VisibleStateDuration = 1000;
+});
+builder.Services.AddResponseCompression(options =>
+{
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+        new[] { "application/octet-stream" });
+});
+builder.Services.AddSignalR(options =>
+{
+    options.MaximumReceiveMessageSize = null;
+    options.StreamBufferCapacity = null;
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -56,7 +77,8 @@ else
 }
 
 app.UseHttpsRedirection();
-
+app.UseResponseCompression();
+app.MapHub<ShareHub>("/sharehub");
 app.UseStaticFiles();
 app.UseAntiforgery();
 

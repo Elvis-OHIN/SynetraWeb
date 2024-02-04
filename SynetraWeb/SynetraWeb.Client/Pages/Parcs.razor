@@ -2,53 +2,142 @@
 
 @using SynetraWeb.Client.Models;
 @using SynetraWeb.Client.Services;
-@rendermode InteractiveAuto
+@using SynetraWeb.Client.Modals;
 @inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
-<h3>My Models</h3>
-<button class="btn btn-success" @onclick="AddParc">Add New Parcs</button>
+@rendermode InteractiveAuto
+
+<h3>Parcs</h3>
+
+<MudButton @onclick="OpenDialogAddForm" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Create New Parc</MudButton>
+
+<MudDialog @bind-IsVisible="isAddFormVisible" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Parc
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="newParc" OnValidSubmit="AddParc">
+            <DataAnnotationsValidator />
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Name" @bind-Value="newParc.Name"
+                                  For="@(() => newParc.Name)"></MudTextField>
+                    <MudSwitch @bind-Value="newParc.IsActive" Color="Color.Primary" Label="IsActive" />
+                </MudCardContent>
+                
+            </MudCard>
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Add</MudButton>
+            </MudCardActions>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
 @if (parcs == null)
 {
     <p>Loading...</p>
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Name</th>
-                <th>IsActive</th>
-                <th>IsEnable</th>
-                <th>CreatedDate</th>
-                <th>UpdatedDate</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var parc in parcs)
-            {
-                <tr>
-                    <td>@parc.Id</td>
-                    <td>@parc.Name</td>
-                    <td>@parc.IsActive</td>
-                    <td>@parc.IsEnable</td>
-                    <td>@parc.CreatedDate</td>
-                    <td>@parc.UpdatedDate</td>
-                    <td>
-                        <button class="btn btn-warning" @onclick="() => ShowParc(parc.Id)">Voir</button>
-                        <button class="btn btn-primary" @onclick="() => EditModel(parc)">Edit</button>
-                        <button class="btn btn-danger" @onclick="() => DeleteModel(parc.Id)">Delete</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <MudTable Items="parcs" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2">
+        <HeaderContent>
+            <MudTh>Id</MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>IsActive</MudTh>
+            <MudTh>CreatedDate</MudTh>
+            <MudTh>UpdatedDate</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Id">@context.Id</MudTd>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="IsActive">@context.IsActive</MudTd>
+            <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
+            <MudTd DataLabel="UpdatedDate">@context.UpdatedDate</MudTd>
+            <MudTd DataLabel="Action">
+                    <MudIconButton OnClick="(() => OpenDialogEditForm(context))"
+                                   Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary"
+                                   Variant="Variant.Filled"></MudIconButton>
+                    <MudIconButton OnClick="(() => OpenDialogDeleteForm(context))"
+                                   Icon="@Icons.Material.Filled.DeleteForever"
+                                   Color="Color.Error"
+                                   Variant="Variant.Filled"></MudIconButton>
+            </MudTd>
+        </RowTemplate>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+    </MudTable>
+
+
+    <MudDialog @bind-IsVisible="isEditFormvisible" Options="dialogOptions">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Parc
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm Model="editParc" OnValidSubmit="EditParc">
+                <DataAnnotationsValidator />
+                <MudCard>
+                    <MudCardContent>
+                        <MudTextField Label="Name" @bind-Value="editParc.Name"
+                                      For="@(() => editParc.Name)"></MudTextField>
+                        <MudSwitch @bind-Value="editParc.IsActive" Color="Color.Primary" Label="IsActive" />
+                    </MudCardContent>
+                </MudCard>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Update</MudButton>
+                </MudCardActions>
+            </EditForm>
+        </DialogContent>
+    </MudDialog>
+
+    <MudDialog @bind-IsVisible="isDeleteFormVisible" Options="dialogDeleteFormOptions">
+        <DialogContent>
+            <MudText>Do you really want to delete these records? This process cannot be undone.</MudText>
+            </DialogContent>
+            <DialogActions>
+            <MudButton OnClick="CloseDialogDeleteForm">Cancel</MudButton>
+            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteParc">Delete</MudButton>
+            </DialogActions>
+    </MudDialog>
 }
 
 
+
+<style>
+    .my-custom-class {
+        backdrop-filter: blur(10px);
+    }
+</style>
+
 @code {
+    private bool isEditFormvisible;
+    private bool isAddFormVisible;
+    private bool isDeleteFormVisible;
+
+    private DialogOptions dialogOptions = new DialogOptions()
+    {
+            MaxWidth = MaxWidth.Medium, 
+            FullWidth = true, 
+            CloseButton = true,
+            Position = DialogPosition.TopCenter,
+            ClassBackground = "my-custom-class"
+    };
+    private DialogOptions dialogDeleteFormOptions = new DialogOptions()
+    {
+            ClassBackground = "my-custom-class"
+    };
     private List<Parc> parcs;
+    private Parc newParc = new Parc();
+    private Parc editParc = new Parc();
+    private Parc deleteParc = new Parc();
     private Parc selectedModel;
     private ParcService ParcService;
 
@@ -57,7 +146,72 @@ else
         ParcService = new ParcService();
         parcs = await ParcService.GetAllAsync();
     }
+    private void OpenDialogAddForm()
+    {
+        isAddFormVisible = true;
+    }
+    private void OpenDialogEditForm(Parc parc)
+    {
+        editParc = parc;
+        isEditFormvisible = true;
+    }
+    private void OpenDialogDeleteForm(Parc parc)
+    {
+        deleteParc = parc;
+        isDeleteFormVisible = true;
+    }
 
+    private void CloseDialogAddForm()
+    {
+        isAddFormVisible = false;
+    }
+    private void CloseDialogEditForm()
+    {
+        isEditFormvisible = false;
+    }
+    private void CloseDialogDeleteForm()
+    {
+        deleteParc = new Parc();
+        isDeleteFormVisible = false;
+    }
+    private async void AddParc()
+    {
+        ParcService = new ParcService();
+        if (newParc != null)
+        {
+            await ParcService.CreateAsync(newParc);
+            parcs = await ParcService.GetAllAsync();
+            newParc = new Parc();
+            Snackbar.Add("The parc is add", Severity.Success);
+        }
+    }
+    private async void EditParc()
+    {
+        if (editParc != null)
+        {
+            ParcService = new ParcService();
+            await ParcService.UpdateAsync(editParc);
+            parcs = await ParcService.GetAllAsync();
+            Snackbar.Add("The parc is edit", Severity.Success);
+        }
+    }
+    private async void DeleteParc()
+    { 
+        if (deleteParc != null)
+        {
+            ParcService = new ParcService();  
+            await ParcService.DeleteAsync(deleteParc.Id);
+            deleteParc = new Parc();
+            parcs = await ParcService.GetAllAsync();
+        }
+        isDeleteFormVisible = false;
+        StateHasChanged();
+    }
+   
+    async Task OnFileChange(InputFileChangeEventArgs e)
+    {
+
+    }
     private void EditModel(Parc parc)
     {
         selectedModel = parc;
@@ -68,10 +222,11 @@ else
     {
         NavigationManager.NavigateTo($"/parc/{parcId}");
     }
-    private void AddParc()
+    private void CreateParc()
     {
         NavigationManager.NavigateTo("/parc");
     }
+
 
     private  async void DeleteModel(int id)
     {

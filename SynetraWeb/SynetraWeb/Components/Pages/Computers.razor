@@ -1,0 +1,210 @@
+@page "/computers"
+@using SynetraWeb.Client.Models;
+@using SynetraWeb.Client.Services;
+@using Microsoft.AspNetCore.SignalR.Client;
+@using System.Timers
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@implements IAsyncDisposable
+@rendermode InteractiveServer
+
+<h3>Computers</h3>
+<button class="btn btn-success" @onclick="AddModel">Add New Computers</button>
+@if (computers == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>ID Product</th>
+                <th>Operating System</th>
+                <th>Os</th>
+                <th>Carte Mere</th>
+                <th>GPU</th>
+                <th>Room</th>
+                <th>Statut</th>
+                <th>IsActive</th>
+                <th>IsEnable</th>
+                <th>Created Date</th>
+                <th>Updated Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var computer in computers)
+            {
+                <tr>
+                    <td>@computer.Name</td>
+                    <td>@computer.IDProduct</td>
+                    <td>@computer.OperatingSystem</td>
+                    <td>@computer.Os</td>
+                    <td>@computer.CarteMere</td>
+                    <td>@computer.GPU</td>
+                    <td>@(computer.Room != null ? computer.Room.Name : "N/A")</td>
+                    <td>@computer.Statut</td>
+                    <td>@computer.IsActive</td>
+                    <td>@computer.IsEnable</td>
+                    <td>@computer.CreatedDate.ToString("MM/dd/yyyy HH:mm:ss")</td>
+                    <td>@(computer.UpdatedDate != null ? computer.UpdatedDate.Value.ToString("MM/dd/yyyy HH:mm:ss") : "N/A")</td>
+                    <td>
+                        <button class="btn btn-warning" @onclick="() => ShowComputer(computer)">Voir</button>
+                        <button class="btn btn-primary" @onclick="() => EditModel(computer)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteModel(computer.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <MudDialog @bind-IsVisible="isShowFormVisible" Options="dialogOptions">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Show Computer
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudCard>
+                <MudCardContent Class="d-flex flex-column">
+                    <MudTd DataLabel="Name">@showComputer.Name</MudTd>
+                    <MudTd DataLabel="IDProduct">@showComputer.IDProduct</MudTd>
+                    <MudTd DataLabel="GPU">@showComputer.GPU</MudTd>
+                    <MudTd DataLabel="CarteMere">@showComputer.CarteMere</MudTd>
+                    <MudTd DataLabel="OperatingSystem">@showComputer.OperatingSystem</MudTd>
+                    <MudTd DataLabel="Statut">@showComputer.Statut</MudTd>
+                    <MudTd DataLabel="Os">@showComputer.Os</MudTd>
+                    @foreach (var message in messages)
+                    {
+                        if (!nestedVisible)
+                        {
+                            <div class="d-flex justify-center">
+                                <MudImage ObjectFit="ObjectFit.Cover" Height="300" Width="500" Src="@message" @bind-IsVisible="@isScreenShow" Alt="Screen" Elevation="25" />
+                            </div>
+                        }
+                        <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="OpenNested">Agrandir</MudButton>
+                        <MudDialog @bind-IsVisible="nestedVisible" Options="dialogOptions2" DisableSidePadding="true">
+                            <DialogContent>
+                                @foreach (var message2 in messages)
+                                {
+                                    <MudImage ObjectFit="ObjectFit.Cover" Fluid="true" Src="@message2" Alt="Screen" Elevation="25" />
+                                }
+                            </DialogContent>
+                   
+                        </MudDialog>
+                    }
+                    <MudButton @onclick="ShowScreen" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Show Screen</MudButton>
+                </MudCardContent>
+            </MudCard>
+        </DialogContent>
+    </MudDialog>
+}
+<style>
+    .transparent-dialog {
+        background-color: rgba(0, 0, 0, 0); /* 0.5 représente l'opacité du fond, 0 étant totalement transparent et 1 étant totalement opaque */
+    }
+</style>
+
+@code {
+    private List<Computer> computers;
+    private Computer selectedModel;
+    private List<string> messages = new List<string>();
+    private ComputerService ComputerService;
+    private bool isShowFormVisible;
+    private bool isScreenShow = false;
+    private byte[] imageData;
+    private string imageDataUrl;
+    private bool pleinEcran = false;
+    private bool visible;
+    private bool nestedVisible;
+
+    private void Open() => visible = true;
+    private void Close() => visible = false;
+    private void OpenNested() => nestedVisible = true;
+    private void CloseNested() => nestedVisible = false;
+    private DialogOptions dialogOptions = new DialogOptions()
+    {
+            MaxWidth = MaxWidth.Medium,
+            CloseButton = true,
+            Position = DialogPosition.TopCenter,
+            ClassBackground = "my-custom-class"
+    };
+    private DialogOptions dialogOptions2 = new DialogOptions()
+        {
+            
+            MaxWidth = MaxWidth.Large,
+            CloseButton = true,
+            CloseOnEscapeKey = true,
+            Position = DialogPosition.Center,
+            ClassBackground = "my-custom-class"
+        };
+    private Computer showComputer = new Computer();
+    private HubConnection? hubConnection;
+    private ImageMessage file = new ImageMessage();
+    protected override async Task OnInitializedAsync()
+    {
+        ComputerService = new ComputerService();
+        computers = await ComputerService.GetAllAsync();
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/sharehub"))
+            .Build();
+
+        hubConnection.On<ImageMessage>("ImageMessage", (file) =>
+        {
+            var encodedMsg = $"{file.ImageHeaders}{Convert.ToBase64String(file.ImageBinary)}";
+            messages.Clear();
+            messages.Add(encodedMsg);
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+
+    }
+    private void ActiverPleinEcran()
+    {
+        pleinEcran = true;
+    }
+    private void FermerPleinEcran()
+    {
+        pleinEcran = false;
+    }
+    private void ShowComputer(Computer computer)
+    {
+        ComputerService = new ComputerService();
+        showComputer = computer;
+        isShowFormVisible = true;
+    }
+    private async void ShowScreen()
+    {
+        isScreenShow = true;
+    }
+
+    private void EditModel(Computer Computer)
+    {
+        selectedModel = Computer;
+        // Naviguez vers la page d'édition ou affichez un formulaire d'édition dans ce composant.
+    }
+    private void AddModel()
+    {
+        // Naviguer vers la page d'ajout, par exemple, "/addmymodel"
+        //NavigationManager.NavigateTo("/addmymodel");
+    }
+
+    private async void DeleteModel(int id)
+    {
+        await ComputerService.DeleteAsync(id);
+        computers = await ComputerService.GetAllAsync();
+    }
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if(hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

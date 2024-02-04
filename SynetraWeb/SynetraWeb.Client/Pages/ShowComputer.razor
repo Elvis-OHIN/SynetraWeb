@@ -48,6 +48,8 @@
             <dt class="col-sm-2">Updated Date</dt>
             <dd class="col-sm-10">@computer.UpdatedDate?.ToString("MM/dd/yyyy HH:mm:ss") ?? "N/A"</dd>
         </dl>
+        <dt class="col-sm-2">ecran</dt>
+        <img src="@imageDataUrl" alt="Image" />
     </div>
 }
 else
@@ -61,9 +63,23 @@ else
 
     private Computer computer;
     private ComputerService ComputerService = new ComputerService();
+    private byte[] imageData;
+
+    private string imageDataUrl;
 
     protected override async Task OnInitializedAsync()
     {
         computer = await ComputerService.GetByIdAsync(computerId);
+        var screen = await ComputerService.GetScreenAsync();
+        imageData = screen.ImageData;
+
+        // Convertissez les données byte en une URL de données pour l'image
+        imageDataUrl = $"data:image/png;base64,{Convert.ToBase64String(imageData)}";
+    }
+   
+    private byte[] GetImageData()
+    {
+        // Remplacez ceci par la logique pour récupérer vos données byte[]
+        return new byte[] { /* vos données byte ici */ };
     }
 }

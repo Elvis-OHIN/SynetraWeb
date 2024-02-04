@@ -2,7 +2,16 @@
 
 @inject NavigationManager NavigationManager
 
-<div class="top-row ps-3 navbar navbar-dark">
+<MudNavMenu Rounded="true" Margin="Margin.Normal" Color="Color.Primary" Class="pa-2">
+    <MudDivider Class="my-2" />
+    <MudNavLink Href="" Match="NavLinkMatch.All"  Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudNavLink Href="parcs" Match="NavLinkMatch.Prefix"s Icon="@Icons.Material.Filled.Storage">Parc</MudNavLink>
+    <MudNavLink Href="computers" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Computer">Computer</MudNavLink>
+    <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
+    <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Weather</MudNavLink>
+</MudNavMenu>
+
+<!--<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">SynetraWeb</a>
     </div>
@@ -15,6 +24,13 @@
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="parcs">
+                <span class="bi bi-server-nav-menu" aria-hidden="true"></span> Parc
             </NavLink>
         </div>
 
@@ -36,11 +52,6 @@
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="parcs">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Parc
-            </NavLink>
-        </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="auth">
@@ -79,7 +90,7 @@
             </NotAuthorized>
         </AuthorizeView>
     </nav>
-</div>
+</div>-->
 
 @code {
     private string? currentUrl;

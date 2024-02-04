@@ -21,6 +21,10 @@ namespace SynetraWeb.Client.Services
         {
             return await _httpClient.GetFromJsonAsync<Computer>($"https://localhost:7082/api/Computers/{id}");
         }
+        public async Task<ShareScreen> GetScreenAsync()
+        {
+            return await _httpClient.GetFromJsonAsync<ShareScreen>($"https://localhost:7082/api/ShareScreens/8");
+        }
 
         public async Task CreateAsync(Computer Computer)
         {
