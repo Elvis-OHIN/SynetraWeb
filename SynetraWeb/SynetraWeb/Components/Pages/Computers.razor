@@ -1,4 +1,5 @@
 @page "/computers"
+@using SynetraUtils.Models.DataManagement
 @using SynetraWeb.Client.Models;
 @using SynetraWeb.Client.Services;
 @using Microsoft.AspNetCore.SignalR.Client;
@@ -95,6 +96,19 @@ else
                    
                         </MudDialog>
                     }
+                    <div class="form-group">
+                        <label>
+                            Titre:
+                            <input @bind="userInput" />
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            Message:
+                            <input @bind="messageInput" size="50" />
+                        </label>
+                    </div>
+                    <button @onclick="Send">Send</button>
                     <MudButton @onclick="ShowScreen" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Show Screen</MudButton>
                 </MudCardContent>
             </MudCard>
@@ -103,11 +117,13 @@ else
 }
 <style>
     .transparent-dialog {
-        background-color: rgba(0, 0, 0, 0); /* 0.5 représente l'opacité du fond, 0 étant totalement transparent et 1 étant totalement opaque */
+        background-color: rgba(0, 0, 0, 0); 
     }
 </style>
 
 @code {
+    private string? userInput;
+    private string? messageInput;
     private List<Computer> computers;
     private Computer selectedModel;
     private List<string> messages = new List<string>();
@@ -143,6 +159,7 @@ else
     private Computer showComputer = new Computer();
     private HubConnection? hubConnection;
     private ImageMessage file = new ImageMessage();
+
     protected override async Task OnInitializedAsync()
     {
         ComputerService = new ComputerService();
@@ -150,7 +167,7 @@ else
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/sharehub"))
             .Build();
-
+        
         hubConnection.On<ImageMessage>("ImageMessage", (file) =>
         {
             var encodedMsg = $"{file.ImageHeaders}{Convert.ToBase64String(file.ImageBinary)}";
@@ -159,8 +176,20 @@ else
             InvokeAsync(StateHasChanged);
         });
 
+        hubConnection.On<NetworkInfo>("ReceiveNetworkInfo", (networkInfo) =>
+        {
+              
+              InvokeAsync(StateHasChanged);
+        });
         await hubConnection.StartAsync();
 
+    }
+    private async Task Send()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("SendMessage", userInput, messageInput);
+        }
     }
     private void ActiverPleinEcran()
     {

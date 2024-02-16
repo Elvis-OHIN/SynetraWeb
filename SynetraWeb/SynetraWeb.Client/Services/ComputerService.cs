@@ -1,5 +1,6 @@
 using SynetraWeb.Client.Models;
 using System.Net.Http.Json;
+using SynetraUtils.Models.DataManagement;
 
 namespace SynetraWeb.Client.Services
 {
