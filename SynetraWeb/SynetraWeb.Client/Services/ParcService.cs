@@ -1,5 +1,4 @@
 using SynetraUtils.Models.DataManagement;
-using SynetraWeb.Client.Authentications;
 using SynetraWeb.Client.Models;
 using System.IO;
 using System.Net.Http;

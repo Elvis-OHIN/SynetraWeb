@@ -1,3 +1,5 @@
+using BlazorWasmAuth.Identity;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -25,12 +27,6 @@ builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAu
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7082/") });
 builder.Services.AddScoped<ParcService>();
 builder.Services.AddScoped<RoomService>();
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-    })
-    .AddIdentityCookies();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -56,12 +52,39 @@ builder.Services.AddResponseCompression(options =>
     options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
         new[] { "application/octet-stream" });
 });
+builder.Services.AddScoped<CookieHandler>();
+
+// set up authorization
+builder.Services.AddAuthorizationCore();
+
+// register the custom state provider
+builder.Services.AddScoped<AuthenticationStateProvider, CookieAuthenticationStateProvider>();
+
+// register the account management interface
+builder.Services.AddScoped(
+    sp => (IAccountManagement)sp.GetRequiredService<AuthenticationStateProvider>());
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/login";
+        options.ExpireTimeSpan = TimeSpan.FromDays(30); // Définissez une durée de vie appropriée
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Utilisez Always en production si HTTPS
+    });
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddHttpClient(
+        "Auth",
+        opt => opt.BaseAddress = new Uri(builder.Configuration["BackendUrl"] ?? "https://localhost:5001"))
+    .AddHttpMessageHandler<CookieHandler>();
 builder.Services.AddSignalR(options =>
 {
     options.MaximumReceiveMessageSize = null;
     options.StreamBufferCapacity = null;
     options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
 });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

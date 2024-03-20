@@ -19,4 +19,9 @@
     <ProjectReference Include="..\..\..\SynetraUtils\SynetraUtils\SynetraUtils.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Authentications\" />
+    <Folder Include="Identity\" />
+  </ItemGroup>
+
 </Project>
