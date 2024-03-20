@@ -26,7 +26,7 @@ namespace SynetraWeb.Components.Hubs
         }
         public async Task SendKeyPress(string key)
         {
-            await Clients.All.SendAsync("ReceiveKeyPress", key);
+            await Clients.Others.SendAsync("ReceiveKeyPress", key);
         }
     }
 }

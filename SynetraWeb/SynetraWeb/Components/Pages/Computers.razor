@@ -82,7 +82,7 @@ else
                         if (!nestedVisible)
                         {
                             <div class="d-flex justify-center">
-                                <div @onmousemove="HandleMouseMove" @onkeydown="HandleKeyDown">
+                                <div tabindex="0" @onkeydown="HandleKeyDown" style="border: 1px solid; padding: 20px;">
                                     <MudImage ObjectFit="ObjectFit.Cover" Height="300" Width="500" Src="@message" @bind-IsVisible="@isScreenShow" Alt="Screen" Elevation="25" />
                                 </div>
                             </div>
@@ -157,7 +157,7 @@ else
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         // Envoyer le code de la touche au serveur via SignalR
-        await hubConnection.InvokeAsync("SendKeyPress", e.Code);
+        await hubConnection.InvokeAsync("SendKeyPress", e.Key);
     }
     private DialogOptions dialogOptions2 = new DialogOptions()
         {

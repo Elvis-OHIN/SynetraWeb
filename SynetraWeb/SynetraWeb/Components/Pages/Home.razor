@@ -1,9 +1,25 @@
 
 @page "/"
+
 @using Microsoft.AspNetCore.Authorization
+@rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Home</PageTitle>
 
+<div tabindex="0" @onkeydown="HandleKeyPress" style="border: 1px solid; padding: 20px;">
+    Appuyez sur une touche...
+</div>
+
+<div id="test" style="border: 1px solid black; padding: 20px; height:350px ;width:1200px">
+    Bougez la souris ici.
+    <p>Position X: @mouseX, Position Y: @mouseY</p>
+</div>
+
+@if (lastKeyPressed != null)
+{
+    <p>Dernière touche pressée : @lastKeyPressed</p>
+}
 <MudChart ChartType="ChartType.Bar" ChartSeries="@Series" XAxisLabels="@XAxisLabels" Width="100%" Height="350px">
 	<CustomGraphics>
 		<style>
@@ -12,8 +28,51 @@
 		</style>
 	</CustomGraphics>
 </MudChart>
+<script>
+    
+    function setupMousePositionListener(dotNetReference) {
+        document.getElementById('test').addEventListener('mousemove', function (event) {
+            var rect = this.getBoundingClientRect();
+            var x = parseInt(event.clientX - rect.left, 10); // S'assurer que x est un entier
+            var y = parseInt(event.clientY - rect.top, 10); // S'assurer que y est un entier
+            dotNetReference.invokeMethodAsync('ReceiveMousePosition', x, y);
+        });
+    }
+
+</script>
 
 @code {
+    private string lastKeyPressed;
+
+    private void HandleKeyPress(KeyboardEventArgs e)
+    {
+        lastKeyPressed = e.Key;
+    }
+    private double mouseX = 0;
+    private double mouseY = 0;
+
+    [JSInvokable]
+    public Task ReceiveMousePosition(int x, int y)
+    {
+        // Votre logique ici
+        mouseX = x;
+        mouseY = y;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("setupMousePositionListener", DotNetObjectReference.Create(this));
+        }
+    }
+
+    private void UpdateMousePosition(MouseEventArgs e)
+    {
+        mouseX = e.ClientX;
+        mouseY = e.ClientY;
+    }
     public List<ChartSeries> Series = new List<ChartSeries>()
     {
         new ChartSeries() { Name = "United States", Data = new double[] { 40, 20, 25, 27, 46, 60, 48, 80, 15 } },

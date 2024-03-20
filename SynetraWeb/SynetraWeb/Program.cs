@@ -62,6 +62,7 @@ builder.Services.AddSignalR(options =>
     options.StreamBufferCapacity = null;
     options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
 });
+builder.Services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
