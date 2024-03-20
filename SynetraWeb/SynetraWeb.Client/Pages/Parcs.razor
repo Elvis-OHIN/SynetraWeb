@@ -1,5 +1,6 @@
 @page "/parcs"
 
+@using SynetraUtils.Models.DataManagement
 @using SynetraWeb.Client.Models;
 @using SynetraWeb.Client.Services;
 @using SynetraWeb.Client.Modals;
@@ -43,7 +44,34 @@
 }
 else
 {
+    <MudButton  Color="@Color.Success" Class="add-item-btn">Add Item</MudButton>
+    <MudButton  Color="@Color.Error" Class="remove-item-btn">Remove Item</MudButton>
+    <MudDataGrid T="Parc" MultiSelection="true" Items="@Parcss" SortMode="SortMode.Multiple" Filterable="true" 
+                 Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
+        <ToolBarContent>
+           <MudButton  Color="@Color.Success" Class="add-item-btn">Add Item</MudButton>
+            <MudSpacer />
+            <MudTextField Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <Columns>
+            <SelectColumn T="Parc" />
+            <PropertyColumn Property="x => x.Name" Title="Nr" Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.IsActive" />
+            <PropertyColumn Property="x => x.Name" SortBy="@_sortBy" />
+            <PropertyColumn Property="x => x.IsEnable" />
+            <PropertyColumn Property="x => x.UpdatedDate" Title="Molar mass" />
+            <PropertyColumn Property="x => x.CreatedDate" Title="Category" />
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Parc" />
+        </PagerContent>
+    </MudDataGrid>
+    
     <MudTable Items="parcs" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2">
+         <ToolBarContent>
+             <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+         </ToolBarContent>
         <HeaderContent>
             <MudTh>Id</MudTh>
             <MudTh>Name</MudTh>
@@ -59,19 +87,19 @@ else
             <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
             <MudTd DataLabel="UpdatedDate">@context.UpdatedDate</MudTd>
             <MudTd DataLabel="Action">
-                    <MudIconButton OnClick="(() => OpenDialogEditForm(context))"
-                                   Icon="@Icons.Material.Filled.Edit"
-                                   Color="Color.Primary"
-                                   Variant="Variant.Filled"></MudIconButton>
-                    <MudIconButton OnClick="(() => OpenDialogDeleteForm(context))"
-                                   Icon="@Icons.Material.Filled.DeleteForever"
-                                   Color="Color.Error"
-                                   Variant="Variant.Filled"></MudIconButton>
+                <MudIconButton OnClick="(() => OpenDialogEditForm(context))"
+                               Icon="@Icons.Material.Filled.Edit"
+                               Color="Color.Primary"
+                               Variant="Variant.Filled"></MudIconButton>
+                <MudIconButton OnClick="(() => OpenDialogDeleteForm(context))"
+                               Icon="@Icons.Material.Filled.DeleteForever"
+                               Color="Color.Error"
+                               Variant="Variant.Filled"></MudIconButton>
             </MudTd>
         </RowTemplate>
-            <PagerContent>
-                <MudTablePager />
-            </PagerContent>
+        <PagerContent>
+            <MudTablePager/>
+        </PagerContent>
     </MudTable>
 
 
@@ -118,9 +146,39 @@ else
 </style>
 
 @code {
+    private IEnumerable<Parc> Parcss = new List<Parc>();
+    private string _searchString;
+    private bool _sortNameByLength;
+    private List<string> _events = new();
+    // custom sort by name length
+    private Func<Parc, object> _sortBy => x =>
+    {
+        if (_sortNameByLength)
+            return x.Name.Length;
+        else
+            return x.Name;
+    };
+  
+    
+    // events
+    void RowClicked(DataGridRowClickEventArgs<Parc> args)
+    {
+        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
+    }
+    
+    void RowRightClicked(DataGridRowClickEventArgs<Parc> args)
+    {
+        _events.Insert(0, $"Event = RowRightClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
+    }
+
+    void SelectedItemsChanged(HashSet<Parc> items)
+    {
+        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
+    }
     private bool isEditFormvisible;
     private bool isAddFormVisible;
     private bool isDeleteFormVisible;
+    private string searchString = null;
 
     private DialogOptions dialogOptions = new DialogOptions()
     {

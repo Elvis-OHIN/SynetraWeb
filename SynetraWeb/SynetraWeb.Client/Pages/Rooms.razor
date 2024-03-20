@@ -1,0 +1,216 @@
+@page "/rooms"
+@using SynetraWeb.Client.Services;
+@using SynetraWeb.Client.Modals;
+@using SynetraUtils.Models.DataManagement;
+@inject NavigationManager NavigationManager
+@inject ParcService ParcService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+@rendermode InteractiveAuto
+
+<h3>Room</h3>
+<MudButton @onclick="OpenDialogAddForm" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Create New Room</MudButton>
+<MudDialog @bind-IsVisible="isAddFormVisible" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Room
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="newRoom" OnValidSubmit="AddRoom">
+            <DataAnnotationsValidator />
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Name" @bind-Value="newRoom.Name"
+                                  For="@(() => newRoom.Name)"></MudTextField>
+                    <MudSelect Label="Parcs" @bind-Value="newRoom.Parc" Variant="Variant.Filled" FullWidth>
+                        @foreach (var parc in parcs)
+                        {
+                           <MudSelectItem Value="@parc"/>
+                        }
+                    </MudSelect>
+                    <MudSwitch @bind-Value="newRoom.IsActive" Color="Color.Primary" Label="IsActive" />
+                </MudCardContent>
+            </MudCard>
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Add</MudButton>
+            </MudCardActions>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+@if (rooms == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <MudTable Items="rooms" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2">
+        <HeaderContent>
+            <MudTh>Id</MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>Parc</MudTh>
+            <MudTh>IsActive</MudTh>
+            <MudTh>CreatedDate</MudTh>
+            <MudTh>UpdatedDate</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Id">@context.Id</MudTd>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Parc">@context.ParcId</MudTd>
+            <MudTd DataLabel="IsActive">@context.IsActive</MudTd>
+            <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
+            <MudTd DataLabel="UpdatedDate">@context.UpdatedDate</MudTd>
+            <MudTd DataLabel="Action">
+                    <MudIconButton OnClick="(() => OpenDialogEditForm(context))"
+                                   Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary"
+                                   Variant="Variant.Filled"></MudIconButton>
+                    <MudIconButton OnClick="(() => OpenDialogDeleteForm(context))"
+                                   Icon="@Icons.Material.Filled.DeleteForever"
+                                   Color="Color.Error"
+                                   Variant="Variant.Filled"></MudIconButton>
+            </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+    </MudTable>
+
+    <MudDialog @bind-IsVisible="isEditFormvisible" Options="dialogOptions">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Room
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm Model="editRoom" OnValidSubmit="EditRoom">
+                <DataAnnotationsValidator />
+                <MudCard>
+                    <MudCardContent>
+                        <MudTextField Label="Name" @bind-Value="editRoom.Name"
+                                      For="@(() => editRoom.Name)"></MudTextField>
+                        <MudSelect Label="Parcs" @bind-Value="editRoom.Parc" Variant="Variant.Filled" FullWidth>
+                             @foreach (var parc in parcs)
+                             { 
+                                <MudSelectItem Value="@parc" />
+                             }
+                        </MudSelect>
+                        <MudSwitch @bind-Value="editRoom.IsActive" Color="Color.Primary" Label="IsActive" />
+                    </MudCardContent>
+                </MudCard>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Update</MudButton>
+                </MudCardActions>
+            </EditForm>
+        </DialogContent>
+    </MudDialog>
+
+    <MudDialog @bind-IsVisible="isDeleteFormVisible" Options="dialogDeleteFormOptions">
+        <DialogContent>
+            <MudText>Do you really want to delete these records? This process cannot be undone.</MudText>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="CloseDialogDeleteForm">Cancel</MudButton>
+            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteRoom">Delete</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+@code {
+    private DialogOptions dialogOptions = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true,
+            Position = DialogPosition.TopCenter,
+            ClassBackground = "my-custom-class"
+        };
+    private DialogOptions dialogDeleteFormOptions = new DialogOptions()
+        {
+            ClassBackground = "my-custom-class"
+        };
+    private List<SynetraUtils.Models.DataManagement.Room> rooms;
+    private List<Parc> parcs = new List<Parc>();
+    private Room newRoom = new Room();
+    private Room editRoom = new Room();
+    private Room deleteRoom = new Room();
+    private Room selectedModel;
+    private RoomService RoomService;
+    private bool isAddFormVisible;
+    private bool isEditFormvisible;
+    private bool isDeleteFormVisible;
+    protected override async Task OnInitializedAsync()
+    {
+        RoomService = new RoomService();
+        parcs = await ParcService.GetAllAsync();
+        rooms = await RoomService.GetAllAsync();
+    }
+    private void OpenDialogAddForm()
+    {
+        isAddFormVisible = true;
+    }
+    private void CloseDialogAddForm()
+    {
+        isAddFormVisible = false;
+    }
+    private void OpenDialogEditForm(Room room)
+    {
+        editRoom = room;
+        isEditFormvisible = true;
+    }
+    private void OpenDialogDeleteForm(Room room)
+    {
+        deleteRoom = room;
+        isDeleteFormVisible = true;
+    }
+
+    private void CloseDialogEditForm()
+    {
+        isEditFormvisible = false;
+    }
+    private void CloseDialogDeleteForm()
+    {
+        deleteRoom = new Room();
+        isDeleteFormVisible = false;
+    }
+    private async void AddRoom()
+    {
+        RoomService = new RoomService();
+        if (newRoom != null)
+        {
+            newRoom.ParcId = newRoom.Parc.Id;
+            newRoom.Parc = null;
+            await RoomService.CreateAsync(newRoom);
+            rooms = await RoomService.GetAllAsync();
+            newRoom = new Room();
+            Snackbar.Add("The room is add", Severity.Success);
+            CloseDialogAddForm();
+            StateHasChanged();
+        }
+    }
+    private async void EditRoom()
+    {
+        if (editRoom != null)
+        {
+            editRoom.ParcId = editRoom.Parc.Id;
+            editRoom.Parc = null;
+            await RoomService.UpdateAsync(editRoom);
+            rooms = await RoomService.GetAllAsync();
+            Snackbar.Add("The room is edit", Severity.Success);
+            CloseDialogEditForm();
+            StateHasChanged();
+        }
+    }
+    private async void DeleteRoom()
+    {
+        if (deleteRoom != null)
+        {
+            await RoomService.DeleteAsync(deleteRoom.Id);
+            deleteRoom = new Room();
+            rooms = await RoomService.GetAllAsync();
+        }
+        CloseDialogDeleteForm();
+        StateHasChanged();
+    }
+}
