@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="C:\Users\elvis\source\repos\SynetraUtils\SynetraUtils\SynetraUtils.csproj" />
+    <ProjectReference Include="..\..\..\SynetraUtils\SynetraUtils\SynetraUtils.csproj" />
   </ItemGroup>
 
 </Project>
