@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Client;
 using SynetraUtils.Models.DataManagement;
 using SynetraWeb.Client.Models;
 
@@ -17,6 +19,14 @@ namespace SynetraWeb.Components.Hubs
         public async Task SendNetworkInfo(NetworkInfo networkInfo)
         {
             await Clients.All.SendAsync("ReceiveNetworkInfo", networkInfo);
+        }
+        public async Task SendMouseMovement(double x, double y)
+        {
+            await Clients.Others.SendAsync("ReceiveMouseMovement", x, y);
+        }
+        public async Task SendKeyPress(string key)
+        {
+            await Clients.All.SendAsync("ReceiveKeyPress", key);
         }
     }
 }
