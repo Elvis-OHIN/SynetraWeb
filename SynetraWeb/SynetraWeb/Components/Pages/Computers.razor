@@ -82,7 +82,9 @@ else
                         if (!nestedVisible)
                         {
                             <div class="d-flex justify-center">
-                                <MudImage ObjectFit="ObjectFit.Cover" Height="300" Width="500" Src="@message" @bind-IsVisible="@isScreenShow" Alt="Screen" Elevation="25" />
+                                <div @onmousemove="HandleMouseMove" @onkeydown="HandleKeyDown">
+                                    <MudImage ObjectFit="ObjectFit.Cover" Height="300" Width="500" Src="@message" @bind-IsVisible="@isScreenShow" Alt="Screen" Elevation="25" />
+                                </div>
                             </div>
                         }
                         <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="OpenNested">Agrandir</MudButton>
@@ -147,6 +149,16 @@ else
             Position = DialogPosition.TopCenter,
             ClassBackground = "my-custom-class"
     };
+    private async Task HandleMouseMove(MouseEventArgs e)
+    {
+        // Envoyer les coordonnées de la souris au serveur via SignalR
+        await hubConnection.InvokeAsync("SendMouseMovement", e.ClientX, e.ClientY);
+    }
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        // Envoyer le code de la touche au serveur via SignalR
+        await hubConnection.InvokeAsync("SendKeyPress", e.Code);
+    }
     private DialogOptions dialogOptions2 = new DialogOptions()
         {
             
