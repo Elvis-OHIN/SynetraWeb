@@ -2,24 +2,31 @@
 @page "/"
 
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.SignalR.Client;
+@inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
 
+
 <PageTitle>Home</PageTitle>
 
-<div tabindex="0" @onkeydown="HandleKeyPress" style="border: 1px solid; padding: 20px;">
-    Appuyez sur une touche...
-</div>
+<style>
+.hide-cursor {
+    cursor: none;
+}
+</style>
 
-<div id="test" style="border: 1px solid black; padding: 20px; height:350px ;width:1200px">
+<div id="test" class="hide-cursor"  @onclick="HandleMouseClickWithArgs" @onkeyup="HandleKeyPress" tabindex="0" style="border: 1px solid black; padding: 20px; height:350px ;width:1200px">
     Bougez la souris ici.
     <p>Position X: @mouseX, Position Y: @mouseY</p>
+    @if (lastKeyPressed != null)
+    {
+        <p>Dernier touche pressée : @lastKeyPressed</p>
+    }
+    <p> Bouton cliqué : @clic</p>
 </div>
 
-@if (lastKeyPressed != null)
-{
-    <p>Derni�re touche press�e : @lastKeyPressed</p>
-}
+
 <MudChart ChartType="ChartType.Bar" ChartSeries="@Series" XAxisLabels="@XAxisLabels" Width="100%" Height="350px">
 	<CustomGraphics>
 		<style>
@@ -38,33 +45,109 @@
             dotNetReference.invokeMethodAsync('ReceiveMousePosition', x, y);
         });
     }
-
+    
+    var isMouseInside = false;
+    
+    function setupMouseEnterLeaveListeners(elementId, dotNetReference) {
+        const element = document.getElementById(elementId);
+    
+        element.addEventListener('mouseenter', () => {
+            isMouseInside = true;
+        });
+    
+        element.addEventListener('mouseleave', () => {
+            isMouseInside = false;
+        });
+    
+        document.addEventListener('keydown', (event) => {
+            if (isMouseInside) {
+                dotNetReference.invokeMethodAsync('HandleKeyPressWithMouseInside', event.key);
+            }
+        });
+        
+        document.addEventListener('contextmenu', (e) => {
+               if (isMouseInside) {
+                    e.preventDefault();
+                    dotNetReference.invokeMethodAsync('HandleRightClick', e.clientX, e.clientY);
+               }
+        });
+    }
 </script>
 
 @code {
     private string lastKeyPressed;
+    private HubConnection? hubConnection;
+    private string clic;
 
-    private void HandleKeyPress(KeyboardEventArgs e)
-    {
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    { 
         lastKeyPressed = e.Key;
     }
+    
+    private void HandleMouseClickWithArgs(MouseEventArgs e)
+    {
+        clic = e.Button switch
+        {
+            0 => "Gauche",
+            1 => "Milieu",
+            2 => "Droit",
+            _ => "Inconnu"
+        };
+        // Ajoutez ici votre logique supplémentaire
+    }
+    protected override async Task OnInitializedAsync()
+    {
+     
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/sharehub"))
+            .Build();
+        
+        await hubConnection.StartAsync();
+
+    }
+ 
+    
     private double mouseX = 0;
     private double mouseY = 0;
 
     [JSInvokable]
-    public Task ReceiveMousePosition(int x, int y)
+    public async Task ReceiveMousePosition(int x, int y)
     {
         // Votre logique ici
         mouseX = x;
         mouseY = y;
+        
+        await hubConnection.InvokeAsync("SendMouseMovement", x, y);
         StateHasChanged();
+    }
+    [JSInvokable]
+    public async Task HandleKeyPressWithMouseInside(string key)
+    {
+  
+        // Implémentez ici la logique souhaitée
+        lastKeyPressed = key;
+        
+        await hubConnection.InvokeAsync("SendKeyPress", key);
+        StateHasChanged();
+    }
+    
+    [JSInvokable]
+    public Task HandleRightClick(double x, double y)
+    {
+        clic = "Droit";
+        StateHasChanged();
+        // Effectuez ici des actions supplémentaires
         return Task.CompletedTask;
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            var dotNetReference = DotNetObjectReference.Create(this);
             await JSRuntime.InvokeVoidAsync("setupMousePositionListener", DotNetObjectReference.Create(this));
+            await JSRuntime.InvokeVoidAsync("setupMouseEnterLeaveListeners", "test", dotNetReference);
+            
+            
         }
     }
 
