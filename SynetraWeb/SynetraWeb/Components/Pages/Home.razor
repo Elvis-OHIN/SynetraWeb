@@ -10,11 +10,6 @@
 
 <PageTitle>Home</PageTitle>
 
-<style>
-.hide-cursor {
-    cursor: none;
-}
-</style>
 
 <div id="test" class="hide-cursor"  @onclick="HandleMouseClickWithArgs" @onkeyup="HandleKeyPress" tabindex="0" style="border: 1px solid black; padding: 20px; height:350px ;width:1200px">
     Bougez la souris ici.
@@ -42,7 +37,7 @@
             var rect = this.getBoundingClientRect();
             var x = parseInt(event.clientX - rect.left, 10); // S'assurer que x est un entier
             var y = parseInt(event.clientY - rect.top, 10); // S'assurer que y est un entier
-            dotNetReference.invokeMethodAsync('ReceiveMousePosition', x, y);
+            dotNetReference.invokeMethodAsync('ReceiveMousePosition', x, y, document.getElementById('test').offsetHeight, document.getElementById('test').offsetWidth);
         });
     }
     
@@ -93,7 +88,7 @@
             2 => "Droit",
             _ => "Inconnu"
         };
-        await hubConnection.InvokeAsync("ReceiveClickPress", clic);
+        await hubConnection.InvokeAsync("SendClickPress", clic);
         // Ajoutez ici votre logique supplémentaire
     }
     protected override async Task OnInitializedAsync()
@@ -112,13 +107,13 @@
     private double mouseY = 0;
 
     [JSInvokable]
-    public async Task ReceiveMousePosition(int x, int y)
+    public async Task ReceiveMousePosition(int x, int y, int height, int width)
     {
         // Votre logique ici
         mouseX = x;
         mouseY = y;
 
-        await hubConnection.InvokeAsync("SendMouseMovement", x, y);
+        await hubConnection.InvokeAsync("SendMouseMovement", x, y, height, width);
         StateHasChanged();
     }
     [JSInvokable]
@@ -138,7 +133,7 @@
         clic = "Droit";
         StateHasChanged();
         // Effectuez ici des actions supplémentaires
-        await hubConnection.InvokeAsync("ReceiveClickPress", clic);
+        await hubConnection.InvokeAsync("SendClickPress", clic);
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

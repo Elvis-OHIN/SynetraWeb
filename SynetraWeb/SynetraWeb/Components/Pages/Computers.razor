@@ -1,5 +1,6 @@
 @page "/computers"
 @using SynetraUtils.Models.DataManagement
+@using SynetraUtils.Models.MessageManagement
 @using SynetraWeb.Client.Models;
 @using SynetraWeb.Client.Services;
 @using Microsoft.AspNetCore.SignalR.Client;
@@ -77,26 +78,43 @@ else
                     <MudTd DataLabel="OperatingSystem">@showComputer.OperatingSystem</MudTd>
                     <MudTd DataLabel="Statut">@showComputer.Statut</MudTd>
                     <MudTd DataLabel="Os">@showComputer.Os</MudTd>
+
+                    @foreach (var network in networkInfos)
+                    {
+                        if (network.CarteMere == showComputer.CarteMere)
+                        {
+                            <MudTd DataLabel="MACAddress">@network.MACAddress</MudTd>
+                            <MudTd DataLabel="IPAddress">@network.IPAddress</MudTd>
+                            <MudTd DataLabel="SubnetMask">@network.SubnetMask</MudTd>
+                            <MudTd DataLabel="DefaultGateway">@network.DefaultGateway</MudTd>
+                            <MudTd DataLabel="DNServers">@network.DNServers</MudTd>
+                            <MudTd DataLabel="Status">@network.Status</MudTd>
+                        }
+                        
+                    }
+                   
                     @foreach (var message in messages)
                     {
-                        if (!nestedVisible)
+                        if (message.CarteMere == showComputer.CarteMere)
                         {
-                            <div class="d-flex justify-center">
-                                <div tabindex="0" @onkeydown="HandleKeyDown" style="border: 1px solid; padding: 20px;">
-                                    <MudImage ObjectFit="ObjectFit.Cover" Height="300" Width="500" Src="@message" @bind-IsVisible="@isScreenShow" Alt="Screen" Elevation="25" />
+                            if (!nestedVisible)
+                            {
+                                <div class="d-flex justify-center">
+                                    <div tabindex="0" @onkeydown="HandleKeyDown" style="border: 1px solid; padding: 20px;">
+                                        <MudImage ObjectFit="ObjectFit.Cover" Height="300" Width="500" Src="@message.ImageData" @bind-IsVisible="@isScreenShow" Alt="Screen" Elevation="25" />
+                                    </div>
                                 </div>
-                            </div>
+                            }
+                            <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="OpenNested">Agrandir</MudButton>
+                            <MudDialog @bind-IsVisible="nestedVisible" Options="dialogOptions2" DisableSidePadding="true">
+                                <DialogContent>
+                                    @foreach (var message2 in messages)
+                                    {
+                                        <MudImage ObjectFit="ObjectFit.Cover" Fluid="true" Src="@message2.ImageData" Alt="Screen" Elevation="25" />
+                                    }
+                                </DialogContent>
+                            </MudDialog>
                         }
-                        <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="OpenNested">Agrandir</MudButton>
-                        <MudDialog @bind-IsVisible="nestedVisible" Options="dialogOptions2" DisableSidePadding="true">
-                            <DialogContent>
-                                @foreach (var message2 in messages)
-                                {
-                                    <MudImage ObjectFit="ObjectFit.Cover" Fluid="true" Src="@message2" Alt="Screen" Elevation="25" />
-                                }
-                            </DialogContent>
-                   
-                        </MudDialog>
                     }
                     <div class="form-group">
                         <label>
@@ -128,7 +146,8 @@ else
     private string? messageInput;
     private List<Computer> computers;
     private Computer selectedModel;
-    private List<string> messages = new List<string>();
+    private List<ShareScreen> messages = new List<ShareScreen>();
+    private List<NetworkInfo> networkInfos = new List<NetworkInfo>();
     private ComputerService ComputerService;
     private bool isShowFormVisible;
     private bool isScreenShow = false;
@@ -161,7 +180,7 @@ else
     }
     private DialogOptions dialogOptions2 = new DialogOptions()
         {
-            
+
             MaxWidth = MaxWidth.Large,
             CloseButton = true,
             CloseOnEscapeKey = true,
@@ -179,22 +198,61 @@ else
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/sharehub"))
             .Build();
-        
+
         hubConnection.On<ImageMessage>("ImageMessage", (file) =>
         {
-            var encodedMsg = $"{file.ImageHeaders}{Convert.ToBase64String(file.ImageBinary)}";
-            messages.Clear();
-            messages.Add(encodedMsg);
+            ShareScreen shareScreen = new();
+            shareScreen.CarteMere = file.CarteMere;
+            shareScreen.ImageData = $"{file.ImageHeaders}{Convert.ToBase64String(file.ImageBinary)}";
+            AjouterOuMettreAJourImage(messages, shareScreen);
             InvokeAsync(StateHasChanged);
         });
 
         hubConnection.On<NetworkInfo>("ReceiveNetworkInfo", (networkInfo) =>
         {
-              
-              InvokeAsync(StateHasChanged);
+
+            AjouterOuMettreAJour(networkInfos, networkInfo);
+
+            InvokeAsync(StateHasChanged);
         });
+
         await hubConnection.StartAsync();
 
+    }
+    private static void AjouterOuMettreAJour(List<NetworkInfo> liste, NetworkInfo nouvelObjet)
+    {
+        var objetExistant = liste.FirstOrDefault(o => o.CarteMere == nouvelObjet.CarteMere);
+
+        if (objetExistant != null)
+        {
+            // Mise à jour de l'objet existant
+            objetExistant.IPAddress = nouvelObjet.IPAddress;
+            objetExistant.DNServers = nouvelObjet.DNServers;
+            objetExistant.Status = nouvelObjet.Status;
+            objetExistant.SubnetMask = nouvelObjet.SubnetMask;
+            objetExistant.DefaultGateway = nouvelObjet.DefaultGateway;
+     
+        }
+        else
+        {
+            // Ajout du nouvel objet dans la liste
+            liste.Add(nouvelObjet);
+        }
+    }
+    private static void AjouterOuMettreAJourImage(List<ShareScreen> liste, ShareScreen nouvelObjet)
+    {
+        var objetExistant = liste.FirstOrDefault(o => o.CarteMere == nouvelObjet.CarteMere);
+
+        if (objetExistant != null)
+        {
+            // Mise à jour de l'objet existant
+            objetExistant.ImageData = nouvelObjet.ImageData;
+        }
+        else
+        {
+            // Ajout du nouvel objet dans la liste
+            liste.Add(nouvelObjet);
+        }
     }
     private async Task Send()
     {

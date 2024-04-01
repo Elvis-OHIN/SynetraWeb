@@ -2,13 +2,14 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using SynetraUtils.Models.DataManagement;
+using SynetraUtils.Models.MessageManagement;
 using SynetraWeb.Client.Models;
 
 namespace SynetraWeb.Components.Hubs
 {
     public class ShareHub : Hub
     {
-        public Task ImageMessage(ImageMessage file)
+        public Task SendImageMessage(ImageMessage file)
         {
             return Clients.All.SendAsync("ImageMessage", file);
         }
@@ -16,13 +17,13 @@ namespace SynetraWeb.Components.Hubs
         {
             await Clients.All.SendAsync("ReceiveMessage", title, message);
         }
-        public async Task SendNetworkInfo(NetworkInfo networkInfo)
+        public Task SendNetworkInfo(NetworkInfo networkInfo)
         {
-            await Clients.All.SendAsync("ReceiveNetworkInfo", networkInfo);
+           return Clients.All.SendAsync("ReceiveNetworkInfo", networkInfo);
         }
-        public async Task SendMouseMovement(double x, double y)
+        public async Task SendMouseMovement(double x, double y ,  double height , double width)
         {
-            await Clients.Others.SendAsync("ReceiveMouseMovement", x, y);
+            await Clients.Others.SendAsync("ReceiveMouseMovement", x, y , height , width);
         }
         public async Task SendKeyPress(string key)
         {
