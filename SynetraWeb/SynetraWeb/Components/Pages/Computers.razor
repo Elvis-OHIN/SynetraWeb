@@ -129,7 +129,7 @@ else
                         </label>
                     </div>
                     <button @onclick="Send">Send</button>
-                    <MudButton @onclick="ShowScreen" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Show Screen</MudButton>
+                    <MudButton @onclick="DisplayShare" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Prendre le contrôle du pc</MudButton>
                 </MudCardContent>
             </MudCard>
         </DialogContent>
@@ -150,13 +150,13 @@ else
     private List<NetworkInfo> networkInfos = new List<NetworkInfo>();
     private ComputerService ComputerService;
     private bool isShowFormVisible;
-    private bool isScreenShow = false;
+    private bool isScreenShow = false; 
     private byte[] imageData;
     private string imageDataUrl;
     private bool pleinEcran = false;
     private bool visible;
     private bool nestedVisible;
-
+    private string userId ;
     private void Open() => visible = true;
     private void Close() => visible = false;
     private void OpenNested() => nestedVisible = true;
@@ -275,9 +275,11 @@ else
         showComputer = computer;
         isShowFormVisible = true;
     }
-    private async void ShowScreen()
+    
+    private async void DisplayShare()
     {
-        isScreenShow = true;
+     
+        NavigationManager.NavigateTo($"/displayShare/{userId}");
     }
 
     private void EditModel(Computer Computer)
