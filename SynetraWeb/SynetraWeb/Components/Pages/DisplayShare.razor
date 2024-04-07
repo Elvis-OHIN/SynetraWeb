@@ -1,0 +1,41 @@
+@layout Layout.LoginLayout; 
+@page "/displayShare/{userId}"
+
+
+<div class="top-content">
+    Contenu ici, par exemple un titre ou un message.
+</div>
+
+<div class="full-screen-image-container">
+    <img src="https://i.ibb.co/wwDn8t7/IMG-6890.jpg" class="full-screen-image" />
+</div>
+
+<style>
+.top-content {
+    width: 100%;
+    padding: 20px;
+    text-align: center; /* Centrer le texte à l'intérieur de la div */
+    /* Ajoutez d'autres styles selon vos besoins, comme la couleur de fond, etc. */
+}
+
+.full-screen-image-container {
+    position: relative; /* Changez à 'fixed' si vous voulez que l'image reste en place lors du défilement */
+    width: 100vw;
+    height: calc(100vh - 60px); /* Ajustez la hauteur en soustrayant la hauteur de la div du haut */
+    overflow: hidden;
+}
+
+.full-screen-image {
+    width: 100%;
+    height: 100%;
+}
+
+
+</style>
+
+
+@code {
+    
+    [Parameter]
+    public string userId { get; set; }
+}
