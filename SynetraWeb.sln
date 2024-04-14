@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SynetraWeb", "SynetraWeb\Sy
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SynetraWeb.Client", "SynetraWeb\SynetraWeb.Client\SynetraWeb.Client.csproj", "{897A5146-E97E-434D-A0E1-B12E010A39A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SynetraUtils", "..\SynetraUtils\SynetraUtils\SynetraUtils.csproj", "{4C12FE1C-8428-4932-ADCF-BD7BDF116C48}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SynetraUtils", "..\SynetraUtils\SynetraUtils\SynetraUtils.csproj", "{4C12FE1C-8428-4932-ADCF-BD7BDF116C48}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

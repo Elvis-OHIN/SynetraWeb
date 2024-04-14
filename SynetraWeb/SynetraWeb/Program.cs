@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor;
 using MudBlazor.Services;
+using SynetraWeb.Client.Authentications;
+using SynetraWeb.Client.Identity;
 using SynetraWeb.Client.Pages;
 using SynetraWeb.Client.Services;
 using SynetraWeb.Components;
@@ -21,7 +23,20 @@ builder.Services.AddRazorComponents()
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
-builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
+builder.Services.AddTransient<CookieHandler>();
+builder.Services.AddScoped<AuthenticationStateProvider, SynetraWeb.Client.Identity.CookieAuthenticationStateProvider>();
+builder.Services.AddScoped(
+    sp => (IAccountManagement)sp.GetRequiredService<AuthenticationStateProvider>());
+
+// set base address for default host
+builder.Services.AddScoped(sp =>
+    new HttpClient { BaseAddress = new Uri(builder.Configuration["FrontendUrl"] ?? "https://localhost:5002") });
+
+// configure client for auth interactions
+builder.Services.AddHttpClient(
+    "Auth",
+    opt => opt.BaseAddress = new Uri(builder.Configuration["BackendUrl"] ?? "https://localhost:7082"))
+    .AddHttpMessageHandler<CookieHandler>();
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7082/") });
 builder.Services.AddScoped<ParcService>();
 builder.Services.AddScoped<RoomService>();
@@ -43,7 +58,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
     .AddDefaultTokenProviders();
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-
+builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddControllers();
 builder.Services.AddMudServices(config =>
 {

@@ -5,10 +5,29 @@
 @using Microsoft.AspNetCore.SignalR.Client;
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
-@inject IJSRuntime JSRuntime
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
 
 
 <PageTitle>Home</PageTitle>
+
+
+<button @onclick="GetClaimsPrincipalData">Get ClaimsPrincipal Data</button>
+
+<p>@authMessage</p>
+
+@if (claims.Count() > 0)
+{
+    <ul>
+        @foreach (var claim in claims)
+        {
+            <li>@claim.Type: @claim.Value</li>
+        }
+    </ul>
+}
+
+<p>@surname</p>
 
 <MudChart ChartType="ChartType.Bar" ChartSeries="@Series" XAxisLabels="@XAxisLabels" Width="100%" Height="350px">
 	<CustomGraphics>
@@ -20,87 +39,29 @@
 </MudChart>
 
 @code {
-    private string lastKeyPressed;
-    private HubConnection? hubConnection;
-    private string clic;
+   
+   
 
-    private async Task HandleKeyPress(KeyboardEventArgs e)
-    { 
-        lastKeyPressed = e.Key;
-    }
+    private string? authMessage;
+    private string? surname;
+    private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
 
-    private async void HandleMouseClickWithArgs(MouseEventArgs e)
+    private async Task GetClaimsPrincipalData()
     {
-        clic = e.Button switch
+        var authState = await AuthenticationStateProvider
+            .GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
         {
-            0 => "Gauche",
-            1 => "Milieu",
-            2 => "Droit",
-            _ => "Inconnu"
-        };
-        await hubConnection.InvokeAsync("SendClickPress", clic);
-        // Ajoutez ici votre logique supplémentaire
-    }
-    protected override async Task OnInitializedAsync()
-    {
-
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavigationManager.ToAbsoluteUri("/sharehub"))
-            .Build();
-
-        await hubConnection.StartAsync();
-
-    }
-
-
-    private double mouseX = 0;
-    private double mouseY = 0;
-
-    [JSInvokable]
-    public async Task ReceiveMousePosition(int x, int y, int height, int width)
-    {
-        // Votre logique ici
-        mouseX = x;
-        mouseY = y;
-
-        await hubConnection.InvokeAsync("SendMouseMovement", x, y, height, width);
-        StateHasChanged();
-    }
-    [JSInvokable]
-    public async Task HandleKeyPressWithMouseInside(string key)
-    {
-
-        // Implémentez ici la logique souhaitée
-        lastKeyPressed = key;
-
-        await hubConnection.InvokeAsync("SendKeyPress", key);
-        StateHasChanged();
-    }
-
-    [JSInvokable]
-    public async Task HandleRightClick(double x, double y)
-    {
-        clic = "Droit";
-        StateHasChanged();
-        // Effectuez ici des actions supplémentaires
-        await hubConnection.InvokeAsync("SendClickPress", clic);
-    }
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            var dotNetReference = DotNetObjectReference.Create(this);
-            await JSRuntime.InvokeVoidAsync("setupMousePositionListener", DotNetObjectReference.Create(this));
-            await JSRuntime.InvokeVoidAsync("setupMouseEnterLeaveListeners", "test", dotNetReference);
-            
-            
+            authMessage = $"{user.Identity.Name} is authenticated.";
+            claims = user.Claims;
+            surname = user.FindFirst(c => c.Type == ClaimTypes.Surname)?.Value;
         }
-    }
-
-    private void UpdateMousePosition(MouseEventArgs e)
-    {
-        mouseX = e.ClientX;
-        mouseY = e.ClientY;
+        else
+        {
+            authMessage = "The user is NOT authenticated.";
+        }
     }
     public List<ChartSeries> Series = new List<ChartSeries>()
     {

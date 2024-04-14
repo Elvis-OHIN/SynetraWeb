@@ -1,33 +1,47 @@
 ﻿@inherits LayoutComponentBase
-<!--<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>-->
+@using SynetraWeb.Components.Account.Shared
 <MudThemeProvider @rendermode="InteractiveServer" />
 <MudDialogProvider @rendermode="InteractiveServer" />
 <MudSnackbarProvider @rendermode="InteractiveServer" />
 
-<MudLayout>
+
+
+
+<MudLayout >
+
     <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu"  Color="Color.Inherit" Edge="Edge.Start" OnClick="(() => DrawerToggle())" />
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Size="Size.Large" />
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudIconButton Icon="@Icons.Material.Outlined.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.Xs">
+            <MudText Typo="Typo.h6" Class="ml-4">Synetra Dashboard</MudText>
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.Xs" Invert="true">
+            <MudText Typo="Typo.subtitle2">Synetra Dashboard</MudText>
+        </MudHidden>
         <MudSpacer />
+        <MudMenu Icon="@Icons.Material.Outlined.Translate" Color="Color.Inherit"  Dense="true">
+            <MudMenuItem>English</MudMenuItem>
+        </MudMenu>
+        <MudMenu Class="mt-1 ml-4">
+            <ActivatorContent>
+                <MudAvatar Image="https://i.ibb.co/FWr5ChS/Capture-d-cran-1.png" />
+            </ActivatorContent>
+            <ChildContent>
+                <PersonCard Class="mt-n2" />
+                <MudDivider Class="mb-2" />
+                <MudListItem Text="Account" Icon="@Icons.Material.Outlined.Person" Href="/personal/account" />
+                <MudListItem Text="Logout" Icon="@Icons.Material.Outlined.Login" Href="/pages/authentication/login" />
+            </ChildContent>
+        </MudMenu>
         <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" >
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6" Class="mt-1">Synetra</MudText>
-        </MudDrawerHeader>
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
         <NavMenu />
     </MudDrawer>
     <MudMainContent class="content px-4 mt-lg-3">
@@ -35,6 +49,8 @@
             @Body
         </MudContainer>
     </MudMainContent>
+
+
 </MudLayout>
 
 

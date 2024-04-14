@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\SynetraUtils\SynetraUtils\SynetraUtils.csproj" />
     <ProjectReference Include="..\SynetraWeb.Client\SynetraWeb.Client.csproj" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.1" />
