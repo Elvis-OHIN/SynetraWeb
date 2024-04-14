@@ -1,9 +1,11 @@
 @layout Layout.LoginLayout; 
-@page "/displayShare/{userId}"
+@page "/displayShare/{userId:int}"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.SignalR.Client;
 @using SynetraUtils.Models.MessageManagement
 @using SynetraWeb.Client.Models
+@using SynetraWeb.Client.Services
+@using SynetraUtils.Models.DataManagement
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 
@@ -15,7 +17,7 @@
 <div class="full-screen-image-container" id="DisplayScreen" @onclick="HandleMouseClickWithArgs" @onkeyup="HandleKeyPress" tabindex="0" >
      @foreach (var message in messages) 
      { 
-         if (message.CarteMere == showComputer.CarteMere) 
+         if (message.CarteMere == computers.CarteMere) 
          {
              <img src="@message.ImageData" class="full-screen-image" />
          }
@@ -85,16 +87,17 @@
 </script>
 
 @code {
-    
+
     [Parameter]
-    public string userId { get; set; }
+    public int userId { get; set; }
+    public Computer computers;
     private string lastKeyPressed;
     private HubConnection? hubConnection;
     private List<ShareScreen> messages = new List<ShareScreen>();
     private string clic;
     private double mouseX = 0;
     private double mouseY = 0;
-    
+
     private async Task HandleKeyPress(KeyboardEventArgs e)
     { 
         lastKeyPressed = e.Key;
@@ -112,10 +115,11 @@
         await hubConnection.InvokeAsync("SendClickPress", clic);
         // Ajoutez ici votre logique supplémentaire
     }
-    
+
     protected override async Task OnInitializedAsync()
     {
-
+        ComputerService computerService = new ComputerService();
+        computers =  await computerService.GetByIdAsync(userId);
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/sharehub"))
             .Build();

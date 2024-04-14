@@ -129,7 +129,7 @@ else
                         </label>
                     </div>
                     <button @onclick="Send">Send</button>
-                    <MudButton @onclick="DisplayShare" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Prendre le contrôle du pc</MudButton>
+                    <MudButton @onclick="() => DisplayShare(showComputer.Id)" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Prendre le contrôle du pc</MudButton>
                 </MudCardContent>
             </MudCard>
         </DialogContent>
@@ -231,7 +231,7 @@ else
             objetExistant.Status = nouvelObjet.Status;
             objetExistant.SubnetMask = nouvelObjet.SubnetMask;
             objetExistant.DefaultGateway = nouvelObjet.DefaultGateway;
-     
+
         }
         else
         {
@@ -275,11 +275,10 @@ else
         showComputer = computer;
         isShowFormVisible = true;
     }
-    
-    private async void DisplayShare()
+
+    private async void DisplayShare(int id)
     {
-     
-        NavigationManager.NavigateTo($"/displayShare/{userId}");
+        NavigationManager.NavigateTo($"/displayShare/{id}");
     }
 
     private void EditModel(Computer Computer)

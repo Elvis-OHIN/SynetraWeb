@@ -10,18 +10,6 @@
 
 <PageTitle>Home</PageTitle>
 
-
-<div id="test" class="hide-cursor"  @onclick="HandleMouseClickWithArgs" @onkeyup="HandleKeyPress" tabindex="0" style="border: 1px solid black; padding: 20px; height:350px ;width:1200px">
-    Bougez la souris ici.
-    <p>Position X: @mouseX, Position Y: @mouseY</p>
-    @if (lastKeyPressed != null)
-    {
-        <p>Dernier touche pressée : @lastKeyPressed</p>
-    }
-    <p> Bouton cliqué : @clic</p>
-</div>
-
-
 <MudChart ChartType="ChartType.Bar" ChartSeries="@Series" XAxisLabels="@XAxisLabels" Width="100%" Height="350px">
 	<CustomGraphics>
 		<style>
@@ -30,44 +18,6 @@
 		</style>
 	</CustomGraphics>
 </MudChart>
-<script>
-    
-    function setupMousePositionListener(dotNetReference) {
-        document.getElementById('test').addEventListener('mousemove', function (event) {
-            var rect = this.getBoundingClientRect();
-            var x = parseInt(event.clientX - rect.left, 10); // S'assurer que x est un entier
-            var y = parseInt(event.clientY - rect.top, 10); // S'assurer que y est un entier
-            dotNetReference.invokeMethodAsync('ReceiveMousePosition', x, y, document.getElementById('test').offsetHeight, document.getElementById('test').offsetWidth);
-        });
-    }
-    
-    var isMouseInside = false;
-    
-    function setupMouseEnterLeaveListeners(elementId, dotNetReference) {
-        const element = document.getElementById(elementId);
-    
-        element.addEventListener('mouseenter', () => {
-            isMouseInside = true;
-        });
-    
-        element.addEventListener('mouseleave', () => {
-            isMouseInside = false;
-        });
-    
-        document.addEventListener('keydown', (event) => {
-            if (isMouseInside) {
-                dotNetReference.invokeMethodAsync('HandleKeyPressWithMouseInside', event.key);
-            }
-        });
-        
-        document.addEventListener('contextmenu', (e) => {
-               if (isMouseInside) {
-                    e.preventDefault();
-                    dotNetReference.invokeMethodAsync('HandleRightClick', e.clientX, e.clientY);
-               }
-        });
-    }
-</script>
 
 @code {
     private string lastKeyPressed;

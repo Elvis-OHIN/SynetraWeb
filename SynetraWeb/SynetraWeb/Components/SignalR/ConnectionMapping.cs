@@ -12,6 +12,7 @@ public class ConnectionMapping<T>
             return _connections.Count;
         }
     }
+    
 
     public void Add(T key, string connectionId)
     {
