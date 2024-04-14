@@ -1,0 +1,192 @@
+@layout Layout.LoginLayout; 
+@page "/displayShare/{userId:int}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client;
+@using SynetraUtils.Models.MessageManagement
+@using SynetraWeb.Client.Models
+@using SynetraWeb.Client.Services
+@using SynetraUtils.Models.DataManagement
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+
+<div class="top-content">
+    Contenu ici, par exemple un titre ou un message.
+</div>
+
+<div class="full-screen-image-container" id="DisplayScreen" @onclick="HandleMouseClickWithArgs" @onkeyup="HandleKeyPress" tabindex="0" >
+     @foreach (var message in messages) 
+     { 
+         if (message.CarteMere == computers.CarteMere) 
+         {
+             <img src="@message.ImageData" class="full-screen-image" />
+         }
+     }
+</div>
+
+<style>
+.top-content {
+    width: 100%;
+    padding: 20px;
+    text-align: center; /* Centrer le texte à l'intérieur de la div */
+    /* Ajoutez d'autres styles selon vos besoins, comme la couleur de fond, etc. */
+}
+
+.full-screen-image-container {
+    position: relative; /* Changez à 'fixed' si vous voulez que l'image reste en place lors du défilement */
+    width: 100vw;
+    height: calc(100vh - 60px); /* Ajustez la hauteur en soustrayant la hauteur de la div du haut */
+    overflow: hidden;
+}
+
+.full-screen-image {
+    width: 100%;
+    height: 100%;
+}
+
+
+</style>
+
+<script>
+    
+    function setupMousePositionListener(dotNetReference) {
+        document.getElementById('DisplayScreen').addEventListener('mousemove', function (event) {
+            var rect = this.getBoundingClientRect();
+            var x = parseInt(event.clientX - rect.left, 10); // S'assurer que x est un entier
+            var y = parseInt(event.clientY - rect.top, 10); // S'assurer que y est un entier
+            dotNetReference.invokeMethodAsync('ReceiveMousePosition', x, y, document.getElementById('DisplayScreen').offsetHeight, document.getElementById('DisplayScreen').offsetWidth);
+        });
+    }
+    
+    var isMouseInside = false;
+    
+    function setupMouseEnterLeaveListeners(elementId, dotNetReference) {
+        const element = document.getElementById(elementId);
+    
+        element.addEventListener('mouseenter', () => {
+            isMouseInside = true;
+        });
+    
+        element.addEventListener('mouseleave', () => {
+            isMouseInside = false;
+        });
+    
+        document.addEventListener('keydown', (event) => {
+            if (isMouseInside) {
+                dotNetReference.invokeMethodAsync('HandleKeyPressWithMouseInside', event.key);
+            }
+        });
+        
+        document.addEventListener('contextmenu', (e) => {
+               if (isMouseInside) {
+                    e.preventDefault();
+                    dotNetReference.invokeMethodAsync('HandleRightClick', e.clientX, e.clientY);
+               }
+        });
+    }
+</script>
+
+@code {
+
+    [Parameter]
+    public int userId { get; set; }
+    public Computer computers;
+    private string lastKeyPressed;
+    private HubConnection? hubConnection;
+    private List<ShareScreen> messages = new List<ShareScreen>();
+    private string clic;
+    private double mouseX = 0;
+    private double mouseY = 0;
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    { 
+        lastKeyPressed = e.Key;
+    }
+
+    private async void HandleMouseClickWithArgs(MouseEventArgs e)
+    {
+        clic = e.Button switch
+        {
+            0 => "Gauche",
+            1 => "Milieu",
+            2 => "Droit",
+            _ => "Inconnu"
+        };
+        await hubConnection.InvokeAsync("SendClickPress", clic);
+        // Ajoutez ici votre logique supplémentaire
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ComputerService computerService = new ComputerService();
+        computers =  await computerService.GetByIdAsync(userId);
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/sharehub"))
+            .Build();
+        hubConnection.On<ImageMessage>("ImageMessage", (file) =>
+        {
+            ShareScreen shareScreen = new();
+            shareScreen.CarteMere = file.CarteMere;
+            shareScreen.ImageData = $"{file.ImageHeaders}{Convert.ToBase64String(file.ImageBinary)}";
+            AjouterOuMettreAJourImage(messages, shareScreen);
+            InvokeAsync(StateHasChanged);
+        });
+        await hubConnection.StartAsync();
+
+    }
+    
+    private static void AjouterOuMettreAJourImage(List<ShareScreen> liste, ShareScreen nouvelObjet)
+    {
+        var objetExistant = liste.FirstOrDefault(o => o.CarteMere == nouvelObjet.CarteMere);
+
+        if (objetExistant != null)
+        {
+            // Mise à jour de l'objet existant
+            objetExistant.ImageData = nouvelObjet.ImageData;
+        }
+        else
+        {
+            // Ajout du nouvel objet dans la liste
+            liste.Add(nouvelObjet);
+        }
+    }
+    
+    [JSInvokable]
+    public async Task ReceiveMousePosition(int x, int y, int height, int width)
+    {
+        // Votre logique ici
+        mouseX = x;
+        mouseY = y;
+
+        await hubConnection.InvokeAsync("SendMouseMovement", x, y, height, width);
+        StateHasChanged();
+    }
+    [JSInvokable]
+    public async Task HandleKeyPressWithMouseInside(string key)
+    {
+
+        // Implémentez ici la logique souhaitée
+        lastKeyPressed = key;
+
+        await hubConnection.InvokeAsync("SendKeyPress", key);
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task HandleRightClick(double x, double y)
+    {
+        clic = "Droit";
+        StateHasChanged();
+        // Effectuez ici des actions supplémentaires
+        await hubConnection.InvokeAsync("SendClickPress", clic);
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var dotNetReference = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("setupMousePositionListener", DotNetObjectReference.Create(this));
+            await JSRuntime.InvokeVoidAsync("setupMouseEnterLeaveListeners", "DisplayScreen", dotNetReference);
+        }
+    }
+}

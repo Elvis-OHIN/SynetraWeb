@@ -1,6 +1,12 @@
 
 @page "/"
+
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.SignalR.Client;
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
+
 
 <PageTitle>Home</PageTitle>
 
@@ -14,6 +20,88 @@
 </MudChart>
 
 @code {
+    private string lastKeyPressed;
+    private HubConnection? hubConnection;
+    private string clic;
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    { 
+        lastKeyPressed = e.Key;
+    }
+
+    private async void HandleMouseClickWithArgs(MouseEventArgs e)
+    {
+        clic = e.Button switch
+        {
+            0 => "Gauche",
+            1 => "Milieu",
+            2 => "Droit",
+            _ => "Inconnu"
+        };
+        await hubConnection.InvokeAsync("SendClickPress", clic);
+        // Ajoutez ici votre logique supplémentaire
+    }
+    protected override async Task OnInitializedAsync()
+    {
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/sharehub"))
+            .Build();
+
+        await hubConnection.StartAsync();
+
+    }
+
+
+    private double mouseX = 0;
+    private double mouseY = 0;
+
+    [JSInvokable]
+    public async Task ReceiveMousePosition(int x, int y, int height, int width)
+    {
+        // Votre logique ici
+        mouseX = x;
+        mouseY = y;
+
+        await hubConnection.InvokeAsync("SendMouseMovement", x, y, height, width);
+        StateHasChanged();
+    }
+    [JSInvokable]
+    public async Task HandleKeyPressWithMouseInside(string key)
+    {
+
+        // Implémentez ici la logique souhaitée
+        lastKeyPressed = key;
+
+        await hubConnection.InvokeAsync("SendKeyPress", key);
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task HandleRightClick(double x, double y)
+    {
+        clic = "Droit";
+        StateHasChanged();
+        // Effectuez ici des actions supplémentaires
+        await hubConnection.InvokeAsync("SendClickPress", clic);
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var dotNetReference = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("setupMousePositionListener", DotNetObjectReference.Create(this));
+            await JSRuntime.InvokeVoidAsync("setupMouseEnterLeaveListeners", "test", dotNetReference);
+            
+            
+        }
+    }
+
+    private void UpdateMousePosition(MouseEventArgs e)
+    {
+        mouseX = e.ClientX;
+        mouseY = e.ClientY;
+    }
     public List<ChartSeries> Series = new List<ChartSeries>()
     {
         new ChartSeries() { Name = "United States", Data = new double[] { 40, 20, 25, 27, 46, 60, 48, 80, 15 } },
