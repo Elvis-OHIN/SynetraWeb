@@ -1,4 +1,5 @@
 @page "/rooms"
+@using Microsoft.AspNetCore.Authorization
 @using SynetraWeb.Client.Services;
 @using SynetraWeb.Client.Modals;
 @using SynetraUtils.Models.DataManagement;
@@ -6,15 +7,18 @@
 @inject ParcService ParcService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject RoomService RoomService
+@attribute [Authorize]
+@using System.Security.Claims
 
-@rendermode InteractiveAuto
+@rendermode InteractiveServer
 
 <h3>Room</h3>
-<MudButton @onclick="OpenDialogAddForm" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Create New Room</MudButton>
+<MudButton @onclick="OpenDialogAddForm" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Ajouter une nouvelle salle</MudButton>
 <MudDialog @bind-IsVisible="isAddFormVisible" Options="dialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Room
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Ajouter une salle
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -22,7 +26,7 @@
             <DataAnnotationsValidator />
             <MudCard>
                 <MudCardContent>
-                    <MudTextField Label="Name" @bind-Value="newRoom.Name"
+                    <MudTextField Label="Nom" @bind-Value="newRoom.Name"
                                   For="@(() => newRoom.Name)"></MudTextField>
                     <MudSelect Label="Parcs" @bind-Value="newRoom.Parc" Variant="Variant.Filled" FullWidth>
                         @foreach (var parc in parcs)
@@ -30,11 +34,11 @@
                            <MudSelectItem Value="@parc"/>
                         }
                     </MudSelect>
-                    <MudSwitch @bind-Value="newRoom.IsActive" Color="Color.Primary" Label="IsActive" />
+                    <MudSwitch @bind-Value="newRoom.IsActive" Color="Color.Primary" Label="Actif" />
                 </MudCardContent>
             </MudCard>
             <MudCardActions>
-                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Add</MudButton>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Ajouter</MudButton>
             </MudCardActions>
         </EditForm>
     </DialogContent>
@@ -45,23 +49,33 @@
 }
 else
 {
-    <MudTable Items="rooms" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2">
+    <MudTable Items="rooms" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2" GroupBy="@_groupDefinition">
         <HeaderContent>
             <MudTh>Id</MudTh>
-            <MudTh>Name</MudTh>
+            <MudTh>Nom</MudTh>
             <MudTh>Parc</MudTh>
-            <MudTh>IsActive</MudTh>
-            <MudTh>CreatedDate</MudTh>
-            <MudTh>UpdatedDate</MudTh>
+            <MudTh>Actif</MudTh>
+            <MudTh>Date de création</MudTh>
+            <MudTh>Date de modification</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
+        <GroupHeaderTemplate>
+            <MudTh colspan="7">@($"{context.GroupName}: {context.Items.FirstOrDefault().Parc?.Name}") </MudTh>
+        </GroupHeaderTemplate>
         <RowTemplate>
             <MudTd DataLabel="Id">@context.Id</MudTd>
-            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Nom">@context.Name</MudTd>
             <MudTd DataLabel="Parc">@context.ParcId</MudTd>
-            <MudTd DataLabel="IsActive">@context.IsActive</MudTd>
-            <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
-            <MudTd DataLabel="UpdatedDate">@context.UpdatedDate</MudTd>
+            @if (@context.IsActive is true)
+            {
+                <MudTd DataLabel="Actif"><MudIcon Icon="@Icons.Material.Filled.Done" Color="Color.Success" /></MudTd>
+            }
+            else
+            {
+                <MudTd DataLabel="Actif"><MudIcon Icon="@Icons.Material.Filled.Clear" Color="Color.Error" /></MudTd>
+            }
+            <MudTd DataLabel="Date de création">@context.CreatedDate</MudTd>
+            <MudTd DataLabel="Date de modification">@context.UpdatedDate</MudTd>
             <MudTd DataLabel="Action">
                     <MudIconButton OnClick="(() => OpenDialogEditForm(context))"
                                    Icon="@Icons.Material.Filled.Edit"
@@ -81,7 +95,7 @@ else
     <MudDialog @bind-IsVisible="isEditFormvisible" Options="dialogOptions">
         <TitleContent>
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Room
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Modifier une salle
             </MudText>
         </TitleContent>
         <DialogContent>
@@ -89,9 +103,9 @@ else
                 <DataAnnotationsValidator />
                 <MudCard>
                     <MudCardContent>
-                        <MudTextField Label="Name" @bind-Value="editRoom.Name"
+                        <MudTextField Label="Nom" @bind-Value="editRoom.Name"
                                       For="@(() => editRoom.Name)"></MudTextField>
-                        <MudSelect Label="Parcs" @bind-Value="editRoom.Parc" Variant="Variant.Filled" FullWidth>
+                        <MudSelect Label="Parc" @bind-Value="editRoom.Parc" Variant="Variant.Filled" FullWidth>
                              @foreach (var parc in parcs)
                              { 
                                 <MudSelectItem Value="@parc" />
@@ -101,7 +115,7 @@ else
                     </MudCardContent>
                 </MudCard>
                 <MudCardActions>
-                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Update</MudButton>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Modifier</MudButton>
                 </MudCardActions>
             </EditForm>
         </DialogContent>
@@ -109,11 +123,11 @@ else
 
     <MudDialog @bind-IsVisible="isDeleteFormVisible" Options="dialogDeleteFormOptions">
         <DialogContent>
-            <MudText>Do you really want to delete these records? This process cannot be undone.</MudText>
+            <MudText>Voulez-vous vraiment supprimer cette salle?</MudText>
         </DialogContent>
         <DialogActions>
-            <MudButton OnClick="CloseDialogDeleteForm">Cancel</MudButton>
-            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteRoom">Delete</MudButton>
+            <MudButton OnClick="CloseDialogDeleteForm">Annuler</MudButton>
+            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteRoom">Supprimer</MudButton>
         </DialogActions>
     </MudDialog>
 }
@@ -136,16 +150,25 @@ else
     private Room editRoom = new Room();
     private Room deleteRoom = new Room();
     private Room selectedModel;
-    private RoomService RoomService;
+
     private bool isAddFormVisible;
     private bool isEditFormvisible;
     private bool isDeleteFormVisible;
     protected override async Task OnInitializedAsync()
     {
-        RoomService = new RoomService();
+        newRoom.IsActive = true;
         parcs = await ParcService.GetAllAsync();
         rooms = await RoomService.GetAllAsync();
     }
+
+    private TableGroupDefinition<Room> _groupDefinition = new()
+        {
+            GroupName = "Parc",
+            Indentation = false,
+            Expandable = true,
+            IsInitiallyExpanded = false,
+            Selector = (e) => e.ParcId
+        };
     private void OpenDialogAddForm()
     {
         isAddFormVisible = true;
@@ -176,17 +199,21 @@ else
     }
     private async void AddRoom()
     {
-        RoomService = new RoomService();
+
         if (newRoom != null)
         {
-            newRoom.ParcId = newRoom.Parc.Id;
-            newRoom.Parc = null;
-            await RoomService.CreateAsync(newRoom);
-            rooms = await RoomService.GetAllAsync();
-            newRoom = new Room();
-            Snackbar.Add("The room is add", Severity.Success);
-            CloseDialogAddForm();
-            StateHasChanged();
+            if (newRoom.Parc is not null)
+            {
+                newRoom.ParcId = newRoom.Parc.Id;
+                newRoom.Parc = null;
+                await RoomService.CreateAsync(newRoom);
+                rooms = await RoomService.GetAllAsync();
+                newRoom = new Room();
+                Snackbar.Add("La salle a été ajouté", Severity.Success);
+                CloseDialogAddForm();
+                StateHasChanged();
+                newRoom.IsActive = true;
+            }
         }
     }
     private async void EditRoom()
@@ -197,7 +224,7 @@ else
             editRoom.Parc = null;
             await RoomService.UpdateAsync(editRoom);
             rooms = await RoomService.GetAllAsync();
-            Snackbar.Add("The room is edit", Severity.Success);
+            Snackbar.Add("La salle a été modifié", Severity.Success);
             CloseDialogEditForm();
             StateHasChanged();
         }
@@ -209,6 +236,7 @@ else
             await RoomService.DeleteAsync(deleteRoom.Id);
             deleteRoom = new Room();
             rooms = await RoomService.GetAllAsync();
+            Snackbar.Add("La salle a été supprimé", Severity.Success);
         }
         CloseDialogDeleteForm();
         StateHasChanged();

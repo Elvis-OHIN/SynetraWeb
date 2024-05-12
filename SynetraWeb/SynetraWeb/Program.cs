@@ -30,14 +30,13 @@ builder.Services.AddScoped(
 
 // set base address for default host
 builder.Services.AddScoped(sp =>
-    new HttpClient { BaseAddress = new Uri(builder.Configuration["FrontendUrl"] ?? "https://localhost:5002") });
+    new HttpClient { BaseAddress = new Uri(builder.Configuration["FrontendUrl"] ?? "https://localhost:7052") });
 
 // configure client for auth interactions
 builder.Services.AddHttpClient(
     "Auth",
     opt => opt.BaseAddress = new Uri(builder.Configuration["BackendUrl"] ?? "https://localhost:7082"))
     .AddHttpMessageHandler<CookieHandler>();
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7082/") });
 builder.Services.AddScoped<ParcService>();
 builder.Services.AddScoped<RoomService>();
 builder.Services.AddAuthentication(options =>
@@ -58,6 +57,8 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
     .AddDefaultTokenProviders();
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+
+
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddControllers();
 builder.Services.AddMudServices(config =>

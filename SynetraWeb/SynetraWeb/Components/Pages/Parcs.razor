@@ -7,17 +7,19 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject ParcService ParcService
+@inject IHttpClientFactory ClientFactory
 
-@rendermode InteractiveAuto
+@rendermode InteractiveServer
 
 <h3>Parcs</h3>
 
-<MudButton @onclick="OpenDialogAddForm" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Create New Parc</MudButton>
+<MudButton @onclick="OpenDialogAddForm" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Ajouter un nouveau parc</MudButton>
 
-<MudDialog @bind-IsVisible="isAddFormVisible" Options="dialogOptions">
+<MudDialog @bind-IsVisible="isAddFormVisible" Options="dialogAddOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Add Parc
+            <MudIcon Icon="@Icons.Material.Filled.AddBox" Class="mr-3" />Ajouter un parc
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -25,14 +27,12 @@
             <DataAnnotationsValidator />
             <MudCard>
                 <MudCardContent>
-                    <MudTextField Label="Name" @bind-Value="newParc.Name"
+                    <MudTextField Label="Nom" @bind-Value="newParc.Name"
                                   For="@(() => newParc.Name)"></MudTextField>
-                    <MudSwitch @bind-Value="newParc.IsActive" Color="Color.Primary" Label="IsActive" />
                 </MudCardContent>
-                
             </MudCard>
             <MudCardActions>
-                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Add</MudButton>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Ajouter</MudButton>
             </MudCardActions>
         </EditForm>
     </DialogContent>
@@ -44,48 +44,28 @@
 }
 else
 {
-    <MudButton  Color="@Color.Success" Class="add-item-btn">Add Item</MudButton>
-    <MudButton  Color="@Color.Error" Class="remove-item-btn">Remove Item</MudButton>
-    <MudDataGrid T="Parc" MultiSelection="true" Items="@Parcss" SortMode="SortMode.Multiple" Filterable="true" 
-                 Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
-        <ToolBarContent>
-           <MudButton  Color="@Color.Success" Class="add-item-btn">Add Item</MudButton>
-            <MudSpacer />
-            <MudTextField Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-        </ToolBarContent>
-        <Columns>
-            <SelectColumn T="Parc" />
-            <PropertyColumn Property="x => x.Name" Title="Nr" Sortable="false" Filterable="false" />
-            <PropertyColumn Property="x => x.IsActive" />
-            <PropertyColumn Property="x => x.Name" SortBy="@_sortBy" />
-            <PropertyColumn Property="x => x.IsEnable" />
-            <PropertyColumn Property="x => x.UpdatedDate" Title="Molar mass" />
-            <PropertyColumn Property="x => x.CreatedDate" Title="Category" />
-        </Columns>
-        <PagerContent>
-            <MudDataGridPager T="Parc" />
-        </PagerContent>
-    </MudDataGrid>
-    
-    <MudTable Items="parcs" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2">
-         <ToolBarContent>
-             <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-         </ToolBarContent>
+
+    <MudTable  Items="parcs" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2">
         <HeaderContent>
             <MudTh>Id</MudTh>
-            <MudTh>Name</MudTh>
-            <MudTh>IsActive</MudTh>
-            <MudTh>CreatedDate</MudTh>
-            <MudTh>UpdatedDate</MudTh>
+            <MudTh>Nom</MudTh>
+            <MudTh>Actif</MudTh>
+            <MudTh>Date de création</MudTh>
+            <MudTh>Date de modification</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Id">@context.Id</MudTd>
-            <MudTd DataLabel="Name">@context.Name</MudTd>
-            <MudTd DataLabel="IsActive">@context.IsActive</MudTd>
-            <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
-            <MudTd DataLabel="UpdatedDate">@context.UpdatedDate</MudTd>
+            <MudTd DataLabel="Nom">@context.Name</MudTd>
+            @if (@context.IsActive is true)
+            {
+                <MudTd DataLabel="Actif"><MudIcon Icon="@Icons.Material.Filled.Done" Color="Color.Success" /></MudTd>
+            }else
+            {
+                <MudTd DataLabel="Actif"><MudIcon Icon="@Icons.Material.Filled.Clear" Color="Color.Error" /></MudTd>
+            }
+            <MudTd DataLabel="Date de création">@context.CreatedDate</MudTd>
+            <MudTd DataLabel="Date de modification">@context.UpdatedDate</MudTd>
             <MudTd DataLabel="Action">
                 <MudIconButton OnClick="(() => OpenDialogEditForm(context))"
                                Icon="@Icons.Material.Filled.Edit"
@@ -106,7 +86,7 @@ else
     <MudDialog @bind-IsVisible="isEditFormvisible" Options="dialogOptions">
         <TitleContent>
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit Parc
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Modifier un parc
             </MudText>
         </TitleContent>
         <DialogContent>
@@ -114,13 +94,13 @@ else
                 <DataAnnotationsValidator />
                 <MudCard>
                     <MudCardContent>
-                        <MudTextField Label="Name" @bind-Value="editParc.Name"
+                        <MudTextField Label="Nom" @bind-Value="editParc.Name"
                                       For="@(() => editParc.Name)"></MudTextField>
-                        <MudSwitch @bind-Value="editParc.IsActive" Color="Color.Primary" Label="IsActive" />
+                        <MudSwitch @bind-Value="editParc.IsActive" Color="Color.Primary" Label="Actif" />
                     </MudCardContent>
                 </MudCard>
                 <MudCardActions>
-                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Update</MudButton>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Modifier</MudButton>
                 </MudCardActions>
             </EditForm>
         </DialogContent>
@@ -128,11 +108,11 @@ else
 
     <MudDialog @bind-IsVisible="isDeleteFormVisible" Options="dialogDeleteFormOptions">
         <DialogContent>
-            <MudText>Do you really want to delete these records? This process cannot be undone.</MudText>
+            <MudText>Voulez-vous vraiment supprimer ce parc ?</MudText>
             </DialogContent>
             <DialogActions>
-            <MudButton OnClick="CloseDialogDeleteForm">Cancel</MudButton>
-            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteParc">Delete</MudButton>
+            <MudButton OnClick="CloseDialogDeleteForm">Annuler</MudButton>
+            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteParc">Supprimer</MudButton>
             </DialogActions>
     </MudDialog>
 }
@@ -146,62 +126,41 @@ else
 </style>
 
 @code {
-    private IEnumerable<Parc> Parcss = new List<Parc>();
-    private string _searchString;
-    private bool _sortNameByLength;
-    private List<string> _events = new();
-    // custom sort by name length
-    private Func<Parc, object> _sortBy => x =>
-    {
-        if (_sortNameByLength)
-            return x.Name.Length;
-        else
-            return x.Name;
-    };
-  
-    
-    // events
-    void RowClicked(DataGridRowClickEventArgs<Parc> args)
-    {
-        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
-    }
-    
-    void RowRightClicked(DataGridRowClickEventArgs<Parc> args)
-    {
-        _events.Insert(0, $"Event = RowRightClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
-    }
 
-    void SelectedItemsChanged(HashSet<Parc> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
     private bool isEditFormvisible;
     private bool isAddFormVisible;
     private bool isDeleteFormVisible;
     private string searchString = null;
-
+    private MudTable<Parc> table;
     private DialogOptions dialogOptions = new DialogOptions()
     {
             MaxWidth = MaxWidth.Medium, 
             FullWidth = true, 
             CloseButton = true,
-            Position = DialogPosition.TopCenter,
+            Position = DialogPosition.Center,
+            ClassBackground = "my-custom-class"
+    };
+    private DialogOptions dialogAddOptions = new DialogOptions()
+    {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true,
+            Position = DialogPosition.Center,
             ClassBackground = "my-custom-class"
     };
     private DialogOptions dialogDeleteFormOptions = new DialogOptions()
     {
-            ClassBackground = "my-custom-class"
+
+        ClassBackground = "my-custom-class"
     };
     private List<Parc> parcs;
     private Parc newParc = new Parc();
     private Parc editParc = new Parc();
     private Parc deleteParc = new Parc();
     private Parc selectedModel;
-    private ParcService ParcService;
 
     protected override async Task OnInitializedAsync()
     {
-        ParcService = new ParcService();
         parcs = await ParcService.GetAllAsync();
     }
     private void OpenDialogAddForm()
@@ -234,33 +193,33 @@ else
     }
     private async void AddParc()
     {
-        ParcService = new ParcService();
+
         if (newParc != null)
         {
+            newParc.IsActive = true;
             await ParcService.CreateAsync(newParc);
             parcs = await ParcService.GetAllAsync();
             newParc = new Parc();
-            Snackbar.Add("The parc is add", Severity.Success);
+            Snackbar.Add("Le parc à été ajouté", Severity.Success);
         }
     }
     private async void EditParc()
     {
         if (editParc != null)
         {
-            ParcService = new ParcService();
             await ParcService.UpdateAsync(editParc);
             parcs = await ParcService.GetAllAsync();
-            Snackbar.Add("The parc is edit", Severity.Success);
+            Snackbar.Add("Le parc à été modifié", Severity.Success);
         }
     }
     private async void DeleteParc()
     { 
         if (deleteParc != null)
         {
-            ParcService = new ParcService();  
             await ParcService.DeleteAsync(deleteParc.Id);
             deleteParc = new Parc();
             parcs = await ParcService.GetAllAsync();
+            Snackbar.Add("Le parc à été supprimé", Severity.Success);
         }
         isDeleteFormVisible = false;
         StateHasChanged();
@@ -290,5 +249,10 @@ else
     {
        await ParcService.DeleteAsync(id);
        parcs = await ParcService.GetAllAsync();
+    }
+    private void OnSearch(string text)
+    {
+        searchString = text;
+        table.ReloadServerData();
     }
 }

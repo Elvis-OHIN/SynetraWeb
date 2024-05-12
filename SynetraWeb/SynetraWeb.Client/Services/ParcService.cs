@@ -11,36 +11,43 @@ namespace SynetraWeb.Client.Services
 {
     public class ParcService
     {
-        private HttpClient _httpClient = new HttpClient();
+        private IHttpClientFactory ClientFactory { get; }
 
-
+        public ParcService(IHttpClientFactory clientFactory)
+        {
+            ClientFactory = clientFactory;
+        }
         public async Task<List<Parc>> GetAllAsync()
         {
             List<Parc> parc = new List<Parc>();
-            
-            var userResponse = await _httpClient.GetFromJsonAsync<List<Parc>>("https://localhost:7082/api/Parcs");
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            var userResponse = await _httpClient.GetFromJsonAsync<List<Parc>>("api/Parcs");
             parc = userResponse.ToList();
             return parc;
         }
 
         public async Task<Parc> GetByIdAsync(int id)
         {
-            return await _httpClient.GetFromJsonAsync<Parc>($"https://localhost:7082/api/Parcs/{id}");
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            return await _httpClient.GetFromJsonAsync<Parc>($"api/Parcs/{id}");
         }
 
         public async Task CreateAsync(Parc parc)
         {
-            await _httpClient.PostAsJsonAsync("https://localhost:7082/api/Parcs", parc);
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            await _httpClient.PostAsJsonAsync("api/Parcs", parc);
         }
 
         public async Task UpdateAsync(Parc parc)
         {
-            await _httpClient.PutAsJsonAsync($"https://localhost:7082/api/Parcs/{parc.Id}", parc);
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            await _httpClient.PutAsJsonAsync($"api/Parcs/{parc.Id}", parc);
         }
 
         public async Task DeleteAsync(int id)
         {
-            await _httpClient.DeleteAsync($"https://localhost:7082/api/Parcs/{id}");
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            await _httpClient.DeleteAsync($"api/Parcs/{id}");
         }
     }
 }
