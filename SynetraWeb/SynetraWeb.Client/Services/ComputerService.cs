@@ -7,26 +7,37 @@ namespace SynetraWeb.Client.Services
 {
     public class ComputerService
     {
-        private HttpClient _httpClient = new HttpClient();
+        private IHttpClientFactory ClientFactory { get; }
 
-
+        public ComputerService(IHttpClientFactory clientFactory)
+        {
+            ClientFactory = clientFactory;
+        }
         public async Task<List<Computer>> GetAllAsync()
         {
             List<Computer> Computer = new List<Computer>();
-
-            var userResponse = await _httpClient.GetFromJsonAsync<List<Computer>>("https://localhost:7082/api/Computers");
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            var userResponse = await _httpClient.GetFromJsonAsync<List<Computer>>("api/Computers");
             Computer = userResponse.ToList();
             return Computer;
         }
-
+        public async Task<List<Computer>> GetAllByParcAsync(int id)
+        {
+            List<Computer> computers = new List<Computer>();
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            var Response = await _httpClient.GetFromJsonAsync<List<Computer>>($"api/Computers/Parc/{id}");
+            computers =  Response.ToList();
+            return computers;
+        }
         public async Task<Computer> GetByIdAsync(int id)
         {
-            return await _httpClient.GetFromJsonAsync<Computer>($"https://localhost:7082/api/Computers/{id}");
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            return await _httpClient.GetFromJsonAsync<Computer>($"api/Computers/{id}");
         }
         public async Task<Computer> GetByFootPrintAsync(string footString)
         {
-           
-            HttpResponseMessage response = await _httpClient.GetAsync($"https://localhost:7082/api/Computers/FootPrint/{footString}");
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            HttpResponseMessage response = await _httpClient.GetAsync($"api/Computers/FootPrint/{footString}");
             if (response.IsSuccessStatusCode)
             {
                 Computer jsonResponse = await response.Content.ReadFromJsonAsync<Computer>();
@@ -34,10 +45,10 @@ namespace SynetraWeb.Client.Services
             }
             return null;
         }
-        public async Task<Computer> GetByConnexionAsync(string connexion)
+        public async Task<Computer> GetByConnexionAsync(int connexion)
         {
-
-            HttpResponseMessage response = await _httpClient.GetAsync($"https://localhost:7082/api/Computers/Connection/{connexion}");
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            HttpResponseMessage response = await _httpClient.GetAsync($"api/Computers/Connection/{connexion}");
             if (response.IsSuccessStatusCode)
             {
                 Computer jsonResponse = await response.Content.ReadFromJsonAsync<Computer>();
@@ -47,7 +58,8 @@ namespace SynetraWeb.Client.Services
         }
         public async Task<Computer> CreateConnexionAsync(int id,Connection connection)
         {
-            HttpResponseMessage response =  await _httpClient.PostAsJsonAsync($"https://localhost:7082/api/Computers/Connection/{id}",connection);
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            HttpResponseMessage response =  await _httpClient.PutAsJsonAsync($"api/Computers/Connection/{id}",connection);
             if (response.IsSuccessStatusCode)
             {
                 Computer jsonResponse = await response.Content.ReadFromJsonAsync<Computer>();
@@ -55,14 +67,11 @@ namespace SynetraWeb.Client.Services
             }
             return null;
         }
-        public async Task<ShareScreen> GetScreenAsync()
-        {
-            return await _httpClient.GetFromJsonAsync<ShareScreen>($"https://localhost:7082/api/ShareScreens/8");
-        }
 
         public async Task<Computer> CreateAsync(Computer Computer)
         {
-            HttpResponseMessage response = await _httpClient.PostAsJsonAsync("https://localhost:7082/api/Computers", Computer);
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            HttpResponseMessage response = await _httpClient.PostAsJsonAsync("api/Computers", Computer);
             if (response.IsSuccessStatusCode)
             {
                 Computer jsonResponse = await response.Content.ReadFromJsonAsync<Computer>();
@@ -73,15 +82,18 @@ namespace SynetraWeb.Client.Services
 
         public async Task UpdateAsync(Computer Computer)
         {
-            await _httpClient.PutAsJsonAsync($"https://localhost:7082/api/Computers/{Computer.Id}", Computer);
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            await _httpClient.PutAsJsonAsync($"api/Computers/{Computer.Id}", Computer);
         }
         public async Task UpdateFootPrintAsync(int id , string footString)
         {
-            await _httpClient.PutAsJsonAsync($"https://localhost:7082/api/Computers/FootPrint/{3}?footPrint={footString}", footString);
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            await _httpClient.PutAsJsonAsync($"api/Computers/FootPrint/{3}?footPrint={footString}", footString);
         }
         public async Task DeleteAsync(int id)
         {
-            await _httpClient.DeleteAsync($"https://localhost:7082/api/Computers/{id}");
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            await _httpClient.DeleteAsync($"api/Computers/{id}");
         }
     }
 }

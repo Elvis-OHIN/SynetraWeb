@@ -7,7 +7,9 @@
     <MudNavLink Href="parcs" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Storage">Parc</MudNavLink>
     <MudNavLink Href="rooms" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MeetingRoom">Salles</MudNavLink>
     <MudNavLink Href="computers" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Computer">Ordinateurs</MudNavLink>
-    <MudNavLink Href="users" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People">Utilisateurs</MudNavLink>
+    <AuthorizeView Roles="SuperAdmin">
+        <MudNavLink Href="users" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People">Utilisateurs</MudNavLink>
+    </AuthorizeView>
 </MudNavMenu>
 
 @code {

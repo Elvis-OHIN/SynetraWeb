@@ -1,54 +1,170 @@
 ﻿@page "/users"
+@using Microsoft.AspNetCore.Identity
 @using SynetraUtils.Models.DataManagement
+@using SynetraWeb.Client.Services
+@using System.Security.Claims
 @rendermode InteractiveServer
+@inject UserService UserService
+@inject ISnackbar Snackbar
+@inject RoleService RoleService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@attribute [Authorize(Roles = "SuperAdmin")]
 
-<PageTitle>Users</PageTitle>
+<h3>Utilisateurs</h3>
 
-<MudDataGrid T="User" @ref="grid" Items="@userList" DragDropColumnReordering="@_dragDropReorderingEnabled" ColumnsPanelReordering="@_columnsPanelReorderingEnabled"
-             ColumnResizeMode="ResizeMode.Container" Hideable="@_hideable" Filterable="@_filterable" Groupable="@_groupable" FilterMode="@_filterMode" ShowMenuIcon="true">
-    <Columns>
-        <SelectColumn T="User" />
-        <PropertyColumn Property="x => x.Id" Title="Id" />
-        <PropertyColumn Property="x => x.Firstname" Hidden="true" DragAndDropEnabled="false" Groupable="false" Sortable="false" Filterable="false" />
-        <PropertyColumn Property="x => x.Lastname" Title="LastName" Hidden="false" DragAndDropEnabled="true" Groupable="true" Sortable="true" Filterable="true" />
-        <PropertyColumn Property="x => x.UserName" Title="UserName" Filterable="false" Hideable="false" />
-        <PropertyColumn Property="x => x.Email" Title="UserName" Filterable="false" Hideable="false" />
-        <PropertyColumn Property="x => x.EmailConfirmed" Title="UserName" Filterable="false" Hideable="false" />
-        <PropertyColumn Property="x => x.CreatedDate" Title="CreatedDate" @bind-Hidden="@_hideMolar" Hideable="true" />
-        <PropertyColumn Property="x => x.UpdatedDate" Hidden="_hideGroup" Title="Category" />
-        <TemplateColumn Title="Template" />
-    </Columns>
-    <PagerContent>
-        <MudDataGridPager T="User" />
-    </PagerContent>
-</MudDataGrid>
+<MudButton @onclick="OpenDialogAddForm" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Ajouter un nouveau utilisateur</MudButton>
+<MudDialog @bind-IsVisible="isAddFormVisible" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Ajouter un utilisateur
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="newUser" OnValidSubmit="AddUser">
+            <DataAnnotationsValidator />
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Nom" @bind-Value="newUser.Lastname"
+                                  For="@(() => newUser.Lastname)"></MudTextField>
+                    <MudTextField Label="Prénom" @bind-Value="newUser.Firstname"
+                                  For="@(() => newUser.Firstname)"></MudTextField>
+                    <MudTextField Label="UserName" @bind-Value="newUser.UserName"
+                                  For="@(() => newUser.UserName)"></MudTextField>
+                    <MudTextField Label="Email" @bind-Value="newUser.Email"
+                                  For="@(() => newUser.Email)"></MudTextField>
+                    <MudTextField Label="Password" InputType="InputType.Password" @bind-Value="newUser.PasswordHash"
+                                  For="@(() => newUser.Email)"></MudTextField>
+                    <MudSelect Label="Role" SelectAll="true" T="IdentityRole<int>" SelectAllText="Sélectionnez tous les rôles" @bind-SelectedValues="options" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))" @bind-Value="identityRole" Variant="Variant.Filled" MultiSelection="true" FullWidth>
+                        @foreach (var role in roles)
+                        {
+                            <MudSelectItem Value="@role" />
+                        }
+                    </MudSelect>
+                    <MudSwitch @bind-Value="newUser.IsActive" Color="Color.Primary" Label="Actif" />
+                </MudCardContent>
+            </MudCard>
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Ajouter</MudButton>
+            </MudCardActions>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+@if (users == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+<MudTable Items="users" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2">
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Prénom</MudTh>
+        <MudTh>Nom</MudTh>
+        <MudTh>Email</MudTh>
+        <MudTh>Roles</MudTh>
+        <MudTh>Actif</MudTh>
+        <MudTh>Date de création</MudTh>
+        <MudTh>Date de modification</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+            <MudTd DataLabel="Prénom">@context.Firstname</MudTd>
+            <MudTd DataLabel="Nom">@context.Lastname</MudTd>
+        <MudTd DataLabel="Email">@context.Email</MudTd>
 
-<div class="d-flex flex-rows flex-wrap mr-4">
-    <MudSwitch @bind-Value="@_dragDropReorderingEnabled" Color="Color.Primary">Drag Drop Column Reordering</MudSwitch>
-    <MudSwitch @bind-Value="@_columnsPanelReorderingEnabled" Color="Color.Primary">Columns Panel Column Reordering</MudSwitch>
-    <MudSwitch @bind-Value="@_hideable" Color="Color.Primary">Hideable</MudSwitch>
-    <MudSwitch @bind-Value="@_filterable" Color="Color.Primary">Filterable</MudSwitch>
-    <MudSwitch @bind-Value="@_groupable" Color="Color.Primary">Groupable</MudSwitch>
-    <MudSwitch @bind-Value="@_hideMolar" Color="Color.Primary" Converter="_oppositeBoolConverter">Molar Mass Visible</MudSwitch>
-    <MudSwitch @bind-Value="@_hideGroup" Color="Color.Primary" Converter="_oppositeBoolConverter">Category Visible</MudSwitch>
-</div>
+        <MudTd DataLabel="Roles">
+           @foreach (var userRoleCurrent in userRoles)
+           {
+                    @if (userRoleCurrent.UserId == context.Id)
+                    {
+                        @roles.FirstOrDefault(r => r.Id == userRoleCurrent.RoleId).Name
+                    }
+                }
+        </MudTd>
+           
+        @if (@context.IsActive is true)
+        {
+            <MudTd DataLabel="Actif"><MudIcon Icon="@Icons.Material.Filled.Done" Color="Color.Success" /></MudTd>
+        }
+        else
+        {
+            <MudTd DataLabel="Actif"><MudIcon Icon="@Icons.Material.Filled.Clear" Color="Color.Error" /></MudTd>
+        }
+        <MudTd DataLabel="Date de création">@context.CreatedDate</MudTd>
+            <MudTd DataLabel="Date de modification">@context.UpdatedDate</MudTd>
+            <MudTd DataLabel="Action">
+                <MudIconButton OnClick="(() => OpenDialogEditForm(context))"
+                               Icon="@Icons.Material.Filled.Edit"
+                               Color="Color.Primary"
+                               Variant="Variant.Filled"></MudIconButton>
+                <MudIconButton OnClick="(() => OpenDialogDeleteForm(context))"
+                               Icon="@Icons.Material.Filled.DeleteForever"
+                               Color="Color.Error"
+                               Variant="Variant.Filled"></MudIconButton>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
 
-<div class="d-flex flex-wrap mt-4">
-    <MudRadioGroup T="DataGridFilterMode" @bind-Value="@_filterMode">
-        <MudRadio Dense="true" Value="@DataGridFilterMode.Simple" Color="Color.Primary">Simple</MudRadio>
-        <MudRadio Dense="true" Value="@DataGridFilterMode.ColumnFilterMenu" Color="Color.Tertiary">Column Menu</MudRadio>
-        <MudRadio Dense="true" Value="@DataGridFilterMode.ColumnFilterRow">Column Row</MudRadio>
-    </MudRadioGroup>
-</div>
+    <MudDialog @bind-IsVisible="isEditFormvisible" Options="dialogOptions">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Modifier un utilisateur
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm Model="editUser" OnValidSubmit="EditUser">
+                <DataAnnotationsValidator />
+                <MudCard>
+                    <MudCardContent>
+                        <MudTextField Label="Nom" @bind-Value="editUser.Lastname"
+                                      For="@(() => editUser.Lastname)"></MudTextField>
+                        <MudTextField Label="Prénom" @bind-Value="editUser.Firstname"
+                                      For="@(() => editUser.Firstname)"></MudTextField>
+                        <MudTextField Label="UserName" @bind-Value="editUser.UserName"
+                                      For="@(() => editUser.UserName)"></MudTextField>
+                        <MudTextField Label="Email" @bind-Value="editUser.Email"
+                                      For="@(() => editUser.Email)"></MudTextField>
+                        <MudTextField Label="Password" InputType="InputType.Password" @bind-Value="editUser.PasswordHash"
+                                      For="@(() => editUser.Email)"></MudTextField>
+                        <MudSelect Label="Role" SelectAll="true" T="IdentityRole<int>" SelectAllText="Sélectionnez tous les rôles" @bind-SelectedValues="options" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))" @bind-Value="identityRole" Variant="Variant.Filled" MultiSelection="true" FullWidth>
+                         @foreach (var role in roles)
+                            {
+                                <MudSelectItem Value="@role" />
+                            }
+                        </MudSelect>
+                        <MudSwitch @bind-Value="editUser.IsActive" Color="Color.Primary" Label="Actif" />
+                    </MudCardContent>
+                </MudCard>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Modifier</MudButton>
+                </MudCardActions>
+            </EditForm>
+        </DialogContent>
+    </MudDialog>
 
-<div class="d-flex flex-wrap mt-4 gap-1">
-    <MudButton OnClick="@(() => HideColumnsAsync(false))" Variant="Variant.Filled" Color="Color.Primary">Show All Columns</MudButton>
-    <MudButton OnClick="@(() => HideColumnsAsync(true))" Variant="Variant.Filled" Color="Color.Primary">Hide All Columns</MudButton>
-</div>
+    <MudDialog @bind-IsVisible="isDeleteFormVisible" Options="dialogDeleteFormOptions">
+        <DialogContent>
+            <MudText>Voulez-vous vraiment supprimer cet utilisateur?</MudText>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="CloseDialogDeleteForm">Annuler</MudButton>
+            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteUser">Supprimer</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
 @code {
-    private List<User> userList = new List<User>();
-
+    private List<User> users = new List<User>();
+    private IdentityRole<int> identityRole = new IdentityRole<int>();
+    private IdentityUserRole<int> identityUserRole = new IdentityUserRole<int>();
+    private List<IdentityRole<int>> roles = new List<IdentityRole<int>>();
+    private List<IdentityRole<int>> rolesSelected = new List<IdentityRole<int>>();
+    private List<IdentityUserRole<int>> userRoles = new List<IdentityUserRole<int>>();
     private DataGridFilterMode _filterMode = DataGridFilterMode.Simple;
+    private IEnumerable<IdentityRole<int>> options { get; set; } = new HashSet<IdentityRole<int>>();
     private bool _dragDropReorderingEnabled = true;
     private bool _columnsPanelReorderingEnabled = true;
     private bool _hideable = true;
@@ -57,18 +173,119 @@
     private bool _hideMolar = false;
     private bool _hideGroup = false;
     public MudDataGrid<User> grid = null;
+    private bool isEditFormvisible;
+    private bool isAddFormVisible;
+    private bool isDeleteFormVisible;
+    private User newUser = new User();
+    private User editUser = new User();
+    private User deleteUser = new User();
+    private string email = string.Empty;
 
     private MudBlazor.Converter<bool, bool?> _oppositeBoolConverter = new()
         {
             SetFunc = value => !value,
             GetFunc = value => !value ?? true,
         };
-
+    private DialogOptions dialogOptions = new DialogOptions()
+    {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true,
+            Position = DialogPosition.TopCenter,
+            ClassBackground = "my-custom-class"
+    };
+    private DialogOptions dialogDeleteFormOptions = new DialogOptions()
+    {
+            ClassBackground = "my-custom-class"
+    };
+    private string GetMultiSelectionText(List<string> selectedValues)
+    {
+        return $"{selectedValues.Count} rôle{(selectedValues.Count > 1 ? "s ont" : " a")} été sélectionné";
+    }
     protected override async Task OnInitializedAsync()
     {
-       
+        var authState = await AuthenticationStateProvider
+           .GetAuthenticationStateAsync();
+        var user = authState.User;
+        email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+        users = await UserService.GetAllExceptCurrentUserAsync(email);
+        roles = await RoleService.GetAllAsync(); 
+        userRoles = await UserService.GetAllRoleAsync();
     }
+    private async void AddUser()
+    {
 
+        if (newUser != null)
+        {
+
+            var userId = await UserService.CreateAsync(newUser);
+            foreach (var roles in options)
+            {
+                identityUserRole.RoleId = roles.Id;
+                identityUserRole.UserId = userId;
+                await RoleService.CreateUserRoleAsync(identityUserRole);
+            }
+
+            users = await UserService.GetAllExceptCurrentUserAsync(email);
+            newUser = new User();
+            identityUserRole = new IdentityUserRole<int>();
+            Snackbar.Add("L'utilisateur a été ajouté", Severity.Success);
+            CloseDialogAddForm();
+            StateHasChanged();
+            newUser.IsActive = true;
+        }
+    }
+    private void CloseDialogEditForm()
+    {
+        isEditFormvisible = false;
+    }
+    private async void EditUser()
+    {
+        if (editUser != null)
+        {
+            await UserService.UpdateAsync(editUser);
+            users = await UserService.GetAllExceptCurrentUserAsync(email);
+            Snackbar.Add("L'utilisateur à été modifié", Severity.Success);
+            CloseDialogEditForm();
+            StateHasChanged();
+        }
+    }
+    private void OpenDialogAddForm()
+    {
+        isAddFormVisible = true;
+    }
+    private void CloseDialogAddForm()
+    {
+        isAddFormVisible = false;
+    }
+    private void OpenDialogEditForm(User user)
+    {
+        editUser = user;
+        editUser.PasswordHash = null;
+        isEditFormvisible = true;
+    }
+    private void OpenDialogDeleteForm(User user)
+    {
+        deleteUser = user;
+        isDeleteFormVisible = true;
+    }
+    private async void DeleteUser()
+    {
+        if (deleteUser != null)
+        {
+            await UserService.DeleteAsync(deleteUser.Id);
+            deleteUser = new User();
+            users = await UserService.GetAllExceptCurrentUserAsync(email);
+            Snackbar.Add("L'utilisateur a été supprimé", Severity.Success);
+        }
+        CloseDialogDeleteForm();
+        StateHasChanged();
+    }
+    private void CloseDialogDeleteForm()
+    {
+        deleteUser = new User();
+        isDeleteFormVisible = false;
+    }
     private async Task HideColumnsAsync(bool hide)
     {
         foreach (var column in grid.RenderedColumns)

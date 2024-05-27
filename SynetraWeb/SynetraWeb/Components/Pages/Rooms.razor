@@ -13,7 +13,7 @@
 
 @rendermode InteractiveServer
 
-<h3>Room</h3>
+<h3>Salle</h3>
 <MudButton @onclick="OpenDialogAddForm" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Ajouter une nouvelle salle</MudButton>
 <MudDialog @bind-IsVisible="isAddFormVisible" Options="dialogOptions">
     <TitleContent>
@@ -49,7 +49,21 @@
 }
 else
 {
-    <MudTable Items="rooms" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2" GroupBy="@_groupDefinition">
+
+ 
+    <MudStack Row="true" Justify="Justify.FlexEnd">
+        <MudSpacer />
+        <MudSpacer />
+        <MudSpacer />
+        <MudSelect T="Parc" Value="@parcSelected" ValueChanged="OnValueChanged" Label="Parc" Variant="Variant.Outlined" Dense="true" Justify="Justify.End" FullWidth=false>
+            @foreach (Parc parcCurrent in parcs)
+            {
+                <MudSelectItem Value="@parcCurrent" />
+            }
+        </MudSelect>
+    </MudStack>
+    <MudSpacer/>
+    <MudTable Items="rooms" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2" >
         <HeaderContent>
             <MudTh>Id</MudTh>
             <MudTh>Nom</MudTh>
@@ -59,9 +73,6 @@ else
             <MudTh>Date de modification</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
-        <GroupHeaderTemplate>
-            <MudTh colspan="7">@($"{context.GroupName}: {context.Items.FirstOrDefault().Parc?.Name}") </MudTh>
-        </GroupHeaderTemplate>
         <RowTemplate>
             <MudTd DataLabel="Id">@context.Id</MudTd>
             <MudTd DataLabel="Nom">@context.Name</MudTd>
@@ -146,6 +157,7 @@ else
         };
     private List<SynetraUtils.Models.DataManagement.Room> rooms;
     private List<Parc> parcs = new List<Parc>();
+    private Parc parcSelected = new Parc();
     private Room newRoom = new Room();
     private Room editRoom = new Room();
     private Room deleteRoom = new Room();
@@ -158,7 +170,11 @@ else
     {
         newRoom.IsActive = true;
         parcs = await ParcService.GetAllAsync();
-        rooms = await RoomService.GetAllAsync();
+        parcSelected = parcs.FirstOrDefault();
+        if (parcSelected is not null)
+        {
+            rooms = await RoomService.GetAllByParcAsync(parcSelected.Id);
+        }
     }
 
     private TableGroupDefinition<Room> _groupDefinition = new()
@@ -177,6 +193,7 @@ else
     {
         isAddFormVisible = false;
     }
+    
     private void OpenDialogEditForm(Room room)
     {
         editRoom = room;
@@ -207,7 +224,7 @@ else
                 newRoom.ParcId = newRoom.Parc.Id;
                 newRoom.Parc = null;
                 await RoomService.CreateAsync(newRoom);
-                rooms = await RoomService.GetAllAsync();
+                rooms = await RoomService.GetAllByParcAsync(parcSelected.Id);
                 newRoom = new Room();
                 Snackbar.Add("La salle a été ajouté", Severity.Success);
                 CloseDialogAddForm();
@@ -223,7 +240,7 @@ else
             editRoom.ParcId = editRoom.Parc.Id;
             editRoom.Parc = null;
             await RoomService.UpdateAsync(editRoom);
-            rooms = await RoomService.GetAllAsync();
+            rooms = await RoomService.GetAllByParcAsync(parcSelected.Id);
             Snackbar.Add("La salle a été modifié", Severity.Success);
             CloseDialogEditForm();
             StateHasChanged();
@@ -235,10 +252,16 @@ else
         {
             await RoomService.DeleteAsync(deleteRoom.Id);
             deleteRoom = new Room();
-            rooms = await RoomService.GetAllAsync();
+            rooms = await RoomService.GetAllByParcAsync(parcSelected.Id);
             Snackbar.Add("La salle a été supprimé", Severity.Success);
         }
         CloseDialogDeleteForm();
+        StateHasChanged();
+    }
+    private async void OnValueChanged(Parc parc)
+    {
+        parcSelected = parc;
+        rooms = await RoomService.GetAllByParcAsync(parc.Id);
         StateHasChanged();
     }
 }

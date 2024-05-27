@@ -7,6 +7,7 @@
 @using SynetraWeb.Client.Services
 @using SynetraUtils.Models.DataManagement
 @inject NavigationManager NavigationManager
+@inject ComputerService ComputerService
 @inject IJSRuntime JSRuntime
 
 
@@ -113,13 +114,12 @@
             _ => "Inconnu"
         };
         await hubConnection.InvokeAsync("SendClickPress", clic);
-        // Ajoutez ici votre logique supplémentaire
     }
 
     protected override async Task OnInitializedAsync()
     {
-        ComputerService computerService = new ComputerService();
-        computers =  await computerService.GetByIdAsync(userId);
+       
+        computers = await ComputerService.GetByIdAsync(userId);
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/sharehub"))
             .Build();

@@ -210,6 +210,8 @@ else
             await ParcService.UpdateAsync(editParc);
             parcs = await ParcService.GetAllAsync();
             Snackbar.Add("Le parc à été modifié", Severity.Success);
+            CloseDialogEditForm();
+            StateHasChanged();
         }
     }
     private async void DeleteParc()

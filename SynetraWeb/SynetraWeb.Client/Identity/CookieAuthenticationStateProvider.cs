@@ -194,7 +194,7 @@ namespace SynetraWeb.Client.Identity
                     var rolesResponse = await _httpClient.GetAsync("roles");
 
                     // throw if request fails
-                    /*rolesResponse.EnsureSuccessStatusCode();
+                    rolesResponse.EnsureSuccessStatusCode();
 
                     // read the response into a string
                     var rolesJson = await rolesResponse.Content.ReadAsStringAsync();
@@ -212,7 +212,7 @@ namespace SynetraWeb.Client.Identity
                                 claims.Add(new Claim(role.Type, role.Value, role.ValueType, role.Issuer, role.OriginalIssuer));
                             }
                         }
-                    }*/
+                    }
 
                     // set the principal
                     var id = new ClaimsIdentity(claims, nameof(CookieAuthenticationStateProvider));

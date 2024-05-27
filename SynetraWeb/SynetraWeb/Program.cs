@@ -38,7 +38,13 @@ builder.Services.AddHttpClient(
     opt => opt.BaseAddress = new Uri(builder.Configuration["BackendUrl"] ?? "https://localhost:7082"))
     .AddHttpMessageHandler<CookieHandler>();
 builder.Services.AddScoped<ParcService>();
+builder.Services.AddScoped<ComputerService>();
 builder.Services.AddScoped<RoomService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<NetworkService>();
+builder.Services.AddScoped<WakeOnLanService>();
+
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
