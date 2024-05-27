@@ -36,7 +36,7 @@ builder.Services.AddScoped(sp =>
 builder.Services.AddHttpClient(
     "Auth",
     opt => opt.BaseAddress = new Uri(builder.Configuration["BackendUrl"] ?? "https://localhost:7082"))
-    .AddHttpMessageHandler<CookieHandler>();
+    .AddHttpMessageHandler<CookieHandler>().SetHandlerLifetime(TimeSpan.FromHours(12));;
 builder.Services.AddScoped<ParcService>();
 builder.Services.AddScoped<ComputerService>();
 builder.Services.AddScoped<RoomService>();
@@ -50,8 +50,22 @@ builder.Services.AddAuthentication(options =>
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
     })
-    .AddIdentityCookies();
-
+    .AddIdentityCookies(cookie =>
+    {
+        cookie.ApplicationCookie?.Configure(config =>
+        {
+            config.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            config.Cookie.SameSite = SameSiteMode.Strict;
+            config.Cookie.HttpOnly = true;
+            config.Cookie.IsEssential = true;
+            config.Cookie.MaxAge = TimeSpan.FromHours(2);
+        });
+    });
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
@@ -78,6 +92,7 @@ builder.Services.AddResponseCompression(options =>
     options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
         new[] { "application/octet-stream" });
 });
+
 builder.Services.AddSignalR(options =>
 {
     options.MaximumReceiveMessageSize = null;
