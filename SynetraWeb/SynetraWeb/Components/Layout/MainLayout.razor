@@ -1,23 +1,65 @@
 ﻿@inherits LayoutComponentBase
+@using SynetraWeb.Components.Account.Shared
 
-<div class="page">
-    <div class="sidebar">
+<MudThemeProvider @rendermode="InteractiveServer" />
+<MudDialogProvider @rendermode="InteractiveServer" />
+<MudSnackbarProvider @rendermode="InteractiveServer" />
+
+<MudLayout >
+
+    <MudAppBar Elevation="1" Style="background-color:#0D47A1">
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudIcon Icon="@logo" Size="Size.Large" />
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudIconButton Icon="@Icons.Material.Outlined.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.Xs">
+            <MudText Typo="Typo.h6" Class="ml-4">Synetra</MudText>
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.Xs" Invert="true">
+            <MudText Typo="Typo.subtitle2">Synetra</MudText>
+        </MudHidden>
+        <MudSpacer />
+        <MudMenu Class="mt-1 ml-4">
+            <ActivatorContent>
+                <MudAvatar Image="https://i.ibb.co/FWr5ChS/Capture-d-cran-1.png" />
+            </ActivatorContent>
+            <ChildContent>
+              
+                <MudDivider Class="mb-2" />
+                <MudListItem Text="Account" Icon="@Icons.Material.Outlined.Person" Href="/personal/account" />
+                <MudListItem Text="Logout" Icon="@Icons.Material.Outlined.Login" Href="/pages/authentication/login" />
+            </ChildContent>
+        </MudMenu>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
         <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
             @Body
-        </article>
-    </main>
-</div>
+        </MudContainer>
+    </MudMainContent>
+
+
+</MudLayout>
+
+
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    bool _drawerOpen = true;
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    const string logo = @"<svg style='width:24px;height:24px' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'  viewBox='0 0 768 767.999994'  preserveAspectRatio='xMidYMid meet' version='1.0'><defs><clipPath id='8842814c18'><path d='M 38.398438 94.421875 L 244.71875 94.421875 L 244.71875 274.683594 L 38.398438 274.683594 Z M 38.398438 94.421875 ' clip-rule='nonzero'/></clipPath><clipPath id='c9eaa31d9c'><path d='M 141.53125 274.683594 L 244.664062 94.421875 L 38.398438 94.421875 Z M 141.53125 274.683594 ' clip-rule='nonzero'/></clipPath><clipPath id='6303213120'><path d='M 157.53125 308.808594 L 613.847656 308.808594 L 613.847656 456.304688 L 157.53125 456.304688 Z M 157.53125 308.808594 ' clip-rule='nonzero'/></clipPath><clipPath id='d4baacb389'><path d='M 240.03125 456.304688 L 531.023438 456.304688 L 613.523438 308.808594 L 157.53125 308.808594 Z M 240.03125 456.304688 ' clip-rule='nonzero'/></clipPath><clipPath id='bf51a61636'><path d='M 283.976562 94.421875 L 729.917969 94.421875 L 729.917969 241.914062 L 283.976562 241.914062 Z M 283.976562 94.421875 ' clip-rule='nonzero'/></clipPath><clipPath id='8f85598533'><path d='M 366.472656 241.914062 L 647.101562 241.914062 L 729.601562 94.421875 L 283.976562 94.421875 Z M 366.472656 241.914062 ' clip-rule='nonzero'/></clipPath><clipPath id='042c94fefa'><path d='M 155 96 L 453 96 L 453 457 L 155 457 Z M 155 96 ' clip-rule='nonzero'/></clipPath><clipPath id='54aac79eaf'><path d='M 452.503906 101.242188 L 239.257812 456.398438 L 112.804688 380.472656 L 326.050781 25.316406 Z M 452.503906 101.242188 ' clip-rule='nonzero'/></clipPath><clipPath id='dd3d3af48c'><path d='M 283.582031 96.046875 L 155.332031 309.648438 L 239.316406 456.304688 L 452.503906 101.242188 Z M 283.582031 96.046875 ' clip-rule='nonzero'/></clipPath><clipPath id='6a32f4c85b'><path d='M 304 320 L 608 320 L 608 711 L 304 711 Z M 304 320 ' clip-rule='nonzero'/></clipPath><clipPath id='2d514e7105'><path d='M 607.378906 320.3125 L 393.988281 711.230469 L 264.523438 640.5625 L 477.914062 249.644531 Z M 607.378906 320.3125 ' clip-rule='nonzero'/></clipPath><clipPath id='022b166990'><path d='M 438.386719 322.054688 L 304.210938 567.855469 L 394.144531 710.941406 L 607.378906 320.3125 Z M 438.386719 322.054688 ' clip-rule='nonzero'/></clipPath><clipPath id='ddbd7326eb'><path d='M 271.148438 523.179688 L 427.394531 523.179688 L 427.394531 639.460938 L 271.148438 639.460938 Z M 271.148438 523.179688 ' clip-rule='nonzero'/></clipPath><clipPath id='8106c0072e'><path d='M 349.191406 639.460938 L 427.238281 523.179688 L 271.148438 523.179688 Z M 349.191406 639.460938 ' clip-rule='nonzero'/></clipPath><clipPath id='16b169cd9c'><path d='M 550.761719 128.328125 L 707 128.328125 L 707 281.960938 L 550.761719 281.960938 Z M 550.761719 128.328125 ' clip-rule='nonzero'/></clipPath><clipPath id='9a0083e675'><path d='M 628.804688 281.960938 L 706.851562 128.328125 L 550.761719 128.328125 Z M 628.804688 281.960938 ' clip-rule='nonzero'/></clipPath></defs><g clip-path='url(#8842814c18)'><g clip-path='url(#c9eaa31d9c)'><path fill='#ffffff' d='M 38.398438 94.421875 L 244.71875 94.421875 L 244.71875 274.683594 L 38.398438 274.683594 Z M 38.398438 94.421875 ' fill-opacity='1' fill-rule='nonzero'/></g></g><g clip-path='url(#6303213120)'><g clip-path='url(#d4baacb389)'><path fill='#5ce1e6' d='M 157.53125 308.808594 L 613.269531 308.808594 L 613.269531 456.304688 L 157.53125 456.304688 Z M 157.53125 308.808594 ' fill-opacity='1' fill-rule='nonzero'/></g></g><g clip-path='url(#bf51a61636)'><g clip-path='url(#8f85598533)'><path fill='#5ce1e6' d='M 283.976562 94.421875 L 729.34375 94.421875 L 729.34375 241.914062 L 283.976562 241.914062 Z M 283.976562 94.421875 ' fill-opacity='1' fill-rule='nonzero'/></g></g><g clip-path='url(#042c94fefa)'><g clip-path='url(#54aac79eaf)'><g clip-path='url(#dd3d3af48c)'><path fill='#5ce1e6' d='M 452.503906 101.242188 L 239.257812 456.398438 L 112.804688 380.472656 L 326.050781 25.316406 Z M 452.503906 101.242188 ' fill-opacity='1' fill-rule='nonzero'/></g></g></g><g clip-path='url(#6a32f4c85b)'><g clip-path='url(#2d514e7105)'><g clip-path='url(#022b166990)'><path fill='#5ce1e6' d='M 607.378906 320.3125 L 394.261719 710.726562 L 264.800781 640.054688 L 477.914062 249.644531 Z M 607.378906 320.3125 ' fill-opacity='1' fill-rule='nonzero'/></g></g></g><g clip-path='url(#ddbd7326eb)'><g clip-path='url(#8106c0072e)'><path fill='#5ce1e6' d='M 271.148438 523.179688 L 427.394531 523.179688 L 427.394531 639.460938 L 271.148438 639.460938 Z M 271.148438 523.179688 ' fill-opacity='1' fill-rule='nonzero'/></g></g><g clip-path='url(#16b169cd9c)'><g clip-path='url(#9a0083e675)'><path fill='#5ce1e6' d='M 550.761719 128.328125 L 706.792969 128.328125 L 706.792969 281.960938 L 550.761719 281.960938 Z M 550.761719 128.328125 ' fill-opacity='1' fill-rule='nonzero'/></g></g></svg>";
+}

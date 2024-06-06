@@ -1,0 +1,587 @@
+@page "/computers"
+@using SynetraUtils.Models.DataManagement
+@using SynetraUtils.Models.MessageManagement
+@using SynetraWeb.Client.Models;
+@using SynetraWeb.Client.Services;
+@using Microsoft.AspNetCore.SignalR.Client;
+@using System.Timers
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject ComputerService ComputerService
+@inject ParcService ParcService
+@inject RoomService RoomService
+@inject NetworkService NetworkService
+@inject WakeOnLanService WakeOnLanService
+@inject ISnackbar Snackbar
+@implements IAsyncDisposable
+@rendermode InteractiveServer
+
+<h3>Ordinateur</h3>
+<MudButton @onclick="OpenDialogAddForm" Variant="Variant.Filled" Color="Color.Info" Class="mb-2">Ajouter un nouveau ordinateur</MudButton>
+<MudDialog @bind-IsVisible="isAddFormVisible" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Ajouter un ordinateur
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="newComputer" OnValidSubmit="AddComputer">
+            <DataAnnotationsValidator />
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Nom" @bind-Value="newComputer.Name"
+                                  For="@(() => newComputer.Name)"></MudTextField>
+                    <MudTextField Label="ID Product" @bind-Value="newComputer.IDProduct"
+                                  For="@(() => newComputer.IDProduct)"></MudTextField>
+                    <MudTextField Label="OperatingSystem" @bind-Value="newComputer.OperatingSystem"
+                                  For="@(() => newComputer.IDProduct)"></MudTextField>
+                    <MudTextField Label="GPU" @bind-Value="newComputer.GPU"
+                                  For="@(() => newComputer.IDProduct)"></MudTextField>
+                    <MudTextField Label="Os" @bind-Value="newComputer.Os"
+                                  For="@(() => newComputer.Os)"></MudTextField>
+                    <MudTextField Label="Carte Mere" @bind-Value="newComputer.CarteMere"
+                                  For="@(() => newComputer.IDProduct)"></MudTextField>
+                    <MudSelect Label="Room" @bind-Value="newComputer.Room" Variant="Variant.Filled" FullWidth>
+                        @foreach (var room in rooms)
+                        {
+                            <MudSelectItem Value="@room" />
+                        }
+                    </MudSelect>
+                    <MudSwitch @bind-Value="newComputer.IsActive" Color="Color.Primary" Label="Actif" />
+                </MudCardContent>
+            </MudCard>
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Ajouter</MudButton>
+            </MudCardActions>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+@if (computers == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <MudStack Row="true" Justify="Justify.FlexEnd">
+        <MudSpacer />
+        <MudSpacer />
+        <MudSpacer />
+        <MudSelect T="Parc" Value="@parcSelected" ValueChanged="OnValueChanged" Label="Parc" Variant="Variant.Outlined" Dense="true" Justify="Justify.End" FullWidth="false">
+            @foreach (Parc parcCurrent in parcs)
+            {
+                <MudSelectItem Value="@parcCurrent" />
+            }
+        </MudSelect>
+    </MudStack>
+   
+    <MudTable Items="computers" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2" GroupBy="@_groupDefinition">
+        <HeaderContent>
+                <MudTh>Id</MudTh>
+                <MudTh>Nom</MudTh>
+                <MudTh>ID de produit</MudTh>
+                <MudTh>Système d'exploitation</MudTh>
+                <MudTh>Os</MudTh>
+                <MudTh>Carte Mere</MudTh>
+                <MudTh>GPU</MudTh>
+                <MudTh>Statut</MudTh>
+                <MudTh>Actif</MudTh>
+                <MudTh>Date de création</MudTh>
+                <MudTh>Date de modification</MudTh>
+                <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <GroupHeaderTemplate>
+            @if(context.Items.FirstOrDefault().Room is null)
+            {
+                <MudTh colspan="12">@($"Non associé à une salle")</MudTh>
+            }else
+            {
+                <MudTh colspan="12">@($"{context.GroupName}: {context.Items.FirstOrDefault().Room?.Name}")</MudTh>
+            }           
+    </GroupHeaderTemplate>
+         <RowTemplate>
+            <MudTd DataLabel="Id">@context.Id</MudTd>
+            <MudTd DataLabel="Nom">@context.Name</MudTd>
+                <MudTd DataLabel="IDProduct">@context.IDProduct</MudTd>
+                <MudTd DataLabel="OperatingSystem">@context.OperatingSystem</MudTd>
+                <MudTd DataLabel="Os">@context.Os</MudTd>
+                <MudTd DataLabel="CarteMere">@context.CarteMere</MudTd>
+                <MudTd DataLabel="GPU">@context.GPU</MudTd>
+                @if (@context.Statut is true)
+                {
+                    <MudTd DataLabel="Statut"><MudIcon Icon="@Icons.Material.Filled.Power" Color="Color.Success" /></MudTd>
+                }
+                else
+                {
+                    <MudTd DataLabel="Statut"><MudIcon Icon="@Icons.Material.Filled.PowerOff" Color="Color.Error" /></MudTd>
+                }     
+                @if (@context.IsActive is true)
+                {
+                    <MudTd DataLabel="Actif"><MudIcon Icon="@Icons.Material.Filled.Done" Color="Color.Success" /></MudTd>
+                }
+                else
+                {
+                    <MudTd DataLabel="Actif"><MudIcon Icon="@Icons.Material.Filled.Clear" Color="Color.Error" /></MudTd>
+                }
+                <MudTd DataLabel="Date de création">@context.CreatedDate.ToString("MM/dd/yyyy HH:mm:ss")</MudTd>
+                <MudTd DataLabel="Date de modification">@(context.UpdatedDate != null ? context.UpdatedDate.Value.ToString("MM/dd/yyyy HH:mm:ss") : "N/A")</MudTd>
+                <MudTd DataLabel="Action">
+                    <MudIconButton OnClick="(() => OpenDialogEditForm(context))"
+                                   Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary"
+                                   Variant="Variant.Filled"></MudIconButton>
+                    <MudIconButton OnClick="(() => OpenDialogDeleteForm(context))"
+                                   Icon="@Icons.Material.Filled.DeleteForever"
+                                   Color="Color.Error"
+                                   Variant="Variant.Filled"></MudIconButton>
+                    <MudIconButton OnClick="(() => ShowComputer(context))"
+                                   Icon="@Icons.Material.Filled.RemoveRedEye"
+                                   Color="Color.Info"
+                                   Variant="Variant.Filled"></MudIconButton>
+                </MudTd>
+         </RowTemplate>
+         <PagerContent>
+                <MudTablePager />
+         </PagerContent>
+    </MudTable>
+
+    <MudDialog @bind-IsVisible="isShowFormVisible" Options="dialogOptions">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Détail de l'ordinateur
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudCard>
+                <MudCardContent Class="d-flex flex-column">
+                    <MudTd DataLabel="Name">Nom : @showComputer.Name</MudTd>
+                    <MudTd DataLabel="IDProduct">ID de produit : @showComputer.IDProduct</MudTd>
+                    <MudTd DataLabel="GPU">GPU : @showComputer.GPU</MudTd>
+                    <MudTd DataLabel="CarteMere">Carte Mere : @showComputer.CarteMere</MudTd>
+                    <MudTd DataLabel="OperatingSystem">Système d'exploitation : @showComputer.OperatingSystem</MudTd>
+                    <MudTd DataLabel="Os">Os : @showComputer.Os</MudTd>
+                    @if (@showComputer.Statut) 
+                    {
+                        <MudTd DataLabel="Statut">Statut : Sous tension</MudTd>
+                    }
+                    else
+                    {
+                        <MudTd DataLabel="Statut">Statut : Hors tension</MudTd>
+                    }
+
+                    @foreach (var network in networkInfos)
+                    {
+                        if (network.ComputerId == showComputer.Id)
+                        {
+                            <MudTd DataLabel="MACAddress">@network.MACAddress</MudTd>
+                            <MudTd DataLabel="IPAddress">@network.IPAddress</MudTd>
+                            <MudTd DataLabel="SubnetMask">@network.SubnetMask</MudTd>
+                            <MudTd DataLabel="DefaultGateway">@network.DefaultGateway</MudTd>
+                            <MudTd DataLabel="Status">@network.Status</MudTd>
+                        }
+                        
+                    }
+                   
+                    @foreach (var message in messages)
+                    {
+                        if (message.CarteMere == showComputer.CarteMere)
+                        {
+                            if (!nestedVisible)
+                            {
+                                <div class="d-flex justify-center">
+                                    <MudImage ObjectFit="ObjectFit.Cover" Height="300" Width="500" Src="@message.ImageData" @bind-IsVisible="@isScreenShow" Alt="Screen" Elevation="25" />
+                                </div>
+                            }
+                            <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="OpenNested">Agrandir</MudButton>
+                            <MudDialog @bind-IsVisible="nestedVisible" Options="dialogOptions2" DisableSidePadding="true">
+                                <DialogContent>
+                                    @foreach (var message2 in messages)
+                                    {
+                                        <MudImage ObjectFit="ObjectFit.Cover" Fluid="true" Src="@message2.ImageData" Alt="Screen" Elevation="25" />
+                                    }
+                                </DialogContent>
+                            </MudDialog>
+                        }
+                    }
+                    
+                   
+                </MudCardContent>
+                <MudCardActions Class="d-flex justify-content-center">
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="() => SendWakeOnLan(showComputer)">Allumer</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="() => SendModeOff(showComputer.Id)">Éteindre</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="() => SendModeVeille(showComputer)">Mettre en veille</MudButton>
+                    <MudButton OnClick="() => DisplayShare(showComputer.Id)" Variant="Variant.Filled" Color="Color.Info">Contrôler l'ordinateur</MudButton>
+                </MudCardActions>
+                <p>@resultWoL</p>
+            </MudCard>
+            <MudSpacer/>
+            <MudCard>
+                <MudCardContent Class="d-flex flex-column">
+                    <MudText Align="Align.Center" Class="mb-n4">Envoyer une notification à l'ordinateur</MudText>
+                    <MudTextField T="string" Label="Titre" @bind-Value="userInput" />
+                    <MudTextField T="string" Label="Message" @bind-Value="messageInput" />
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="Send">Envoyer le message</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </DialogContent>
+    </MudDialog>
+
+    <MudDialog @bind-IsVisible="isEditFormvisible" Options="dialogOptions">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />Modifier un ordinateur
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm Model="editComputer" OnValidSubmit="EditComputer">
+                <DataAnnotationsValidator />
+                <MudCard>
+                    <MudCardContent>
+                        <MudTextField Label="Nom" @bind-Value="editComputer.Name"
+                                      For="@(() => editComputer.Name)"></MudTextField>
+                        <MudTextField Label="ID Product" @bind-Value="editComputer.IDProduct"
+                                      For="@(() => editComputer.IDProduct)"></MudTextField>
+                        <MudTextField Label="OperatingSystem" @bind-Value="editComputer.OperatingSystem"
+                                      For="@(() => editComputer.OperatingSystem)"></MudTextField>
+                        <MudTextField Label="GPU" @bind-Value="editComputer.GPU"
+                                      For="@(() => editComputer.GPU)"></MudTextField>
+                        <MudTextField Label="Os" @bind-Value="editComputer.Os"
+                                      For="@(() => editComputer.Os)"></MudTextField>
+                        <MudTextField Label="Carte Mere" @bind-Value="editComputer.CarteMere"
+                                      For="@(() => editComputer.CarteMere)"></MudTextField>
+                        <MudSelect Label="Room" @bind-Value="editComputer.Room" Variant="Variant.Filled" FullWidth>
+                         @foreach (var room in rooms)
+                            {
+                                <MudSelectItem Value="@room" />
+                            }
+                        </MudSelect>
+                        <MudSwitch @bind-Value="editComputer.IsActive" Color="Color.Primary" Label="Actif" />
+                    </MudCardContent>
+                </MudCard>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Modifier</MudButton>
+                </MudCardActions>
+            </EditForm>
+        </DialogContent>
+    </MudDialog>
+
+    <MudDialog @bind-IsVisible="isDeleteFormVisible" Options="dialogDeleteFormOptions">
+        <DialogContent>
+            <MudText>Voulez-vous vraiment supprimer cet ordinateur?</MudText>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="CloseDialogDeleteForm">Annuler</MudButton>
+            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteComputer">Supprimer</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+<style>
+    .transparent-dialog {
+        background-color: rgba(0, 0, 0, 0); 
+    }
+</style>
+
+@code {
+    private string? userInput;
+    private string? messageInput;
+    private List<Computer> computers;
+    private Computer selectedModel;
+    private string resultWoL;
+    private List<ShareScreen> messages = new List<ShareScreen>();
+    private List<NetworkInfo> networkInfos = new List<NetworkInfo>();
+    private bool isShowFormVisible;
+    private bool isScreenShow = false; 
+    private byte[] imageData;
+    private string imageDataUrl;
+    private bool pleinEcran = false;
+    private bool visible;
+    private bool nestedVisible;
+    private Computer newComputer = new Computer();
+    private Computer editComputer = new Computer();
+    private Computer deleteComputer = new Computer();
+    private string userId ;
+    private Parc parcSelected = new Parc();
+    private List<Parc> parcs = new List<Parc>();
+    private List<Room> rooms = new List<Room>();
+    private bool isAddFormVisible;
+    private bool isEditFormvisible;
+    private bool isDeleteFormVisible;
+    private void Open() => visible = true;
+    private void Close() => visible = false;
+    private void OpenNested() => nestedVisible = true;
+    private void CloseNested() => nestedVisible = false;
+    private DialogOptions dialogOptions = new DialogOptions()
+    {
+            MaxWidth = MaxWidth.Medium,
+            CloseButton = true,
+            FullWidth = true,
+            Position = DialogPosition.TopCenter,
+            ClassBackground = "my-custom-class"
+    };
+    private TableGroupDefinition<Computer> _groupDefinition = new()
+    {
+            GroupName = "Salle",
+            Indentation = false,
+            Expandable = true,
+            IsInitiallyExpanded = false,
+            Selector = (e) => e.RoomId
+    };
+    private DialogOptions dialogOptions2 = new DialogOptions()
+        {
+
+            MaxWidth = MaxWidth.Large,
+            CloseButton = true,
+            CloseOnEscapeKey = true,
+            Position = DialogPosition.Center,
+            ClassBackground = "my-custom-class"
+        };
+    private DialogOptions dialogDeleteFormOptions = new DialogOptions()
+    {
+        ClassBackground = "my-custom-class"
+    };
+    private Computer showComputer = new Computer();
+    private HubConnection? hubConnection;
+    private ImageMessage file = new ImageMessage();
+
+    protected override async Task OnInitializedAsync()
+    {
+        parcs = await ParcService.GetAllAsync();
+        rooms = await RoomService.GetAllAsync();
+        networkInfos = await NetworkService.GetAllAsync();
+        parcSelected = parcs.FirstOrDefault();
+        if (parcSelected is not null)
+        {
+            computers = await ComputerService.GetAllByParcAsync(parcSelected.Id);
+            rooms = await RoomService.GetAllByParcAsync(parcSelected.Id);
+        }
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/sharehub"))
+            .Build();
+
+
+        hubConnection.On<ImageMessage>("ImageMessage", (file) =>
+        {
+            ShareScreen shareScreen = new();
+            shareScreen.CarteMere = file.CarteMere;
+            shareScreen.ImageData = $"{file.ImageHeaders}{Convert.ToBase64String(file.ImageBinary)}";
+            AjouterOuMettreAJourImage(messages, shareScreen);
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<NetworkInfo>("ReceiveNetworkInfo", (networkInfo) =>
+        {
+
+            AjouterOuMettreAJour(networkInfos, networkInfo);
+
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+
+    }
+    private async void OnValueChanged(Parc parc)
+    {
+        parcSelected = parc;
+        computers = await ComputerService.GetAllByParcAsync(parc.Id);
+        StateHasChanged();
+    }
+    private async void AddComputer()
+    {
+
+        if (newComputer != null)
+        {
+            if (newComputer.Room is not null)
+            {
+                newComputer.RoomId = newComputer.Room.Id;
+                newComputer.ParcId = parcSelected.Id;
+                newComputer.Room = null;
+                await ComputerService.CreateAsync(newComputer);
+                computers = await ComputerService.GetAllByParcAsync(parcSelected.Id);
+                newComputer = new Computer();
+                Snackbar.Add("L'ordinateur a été ajouté", Severity.Success);
+                CloseDialogAddForm();
+                StateHasChanged();
+                newComputer.IsActive = true;
+            }
+        }
+    }
+    private async Task SendWakeOnLan(Computer computer)
+    {
+        WakeRequest wakeRequest = new WakeRequest();
+        var objetExistant = networkInfos.FirstOrDefault(o => o.FootPrint == computer.FootPrint);
+        if (objetExistant is not null)
+        {
+            wakeRequest.BroadcastAddress = objetExistant.SubnetMask;
+            wakeRequest.MacAddress = objetExistant.MACAddress;
+            if (wakeRequest.BroadcastAddress is not null && wakeRequest.MacAddress is not null)
+            {
+                resultWoL = await WakeOnLanService.SendWakeOnLanAsync(wakeRequest);
+            }
+            else
+            {
+                resultWoL = "L'ordinateur n'est pas connecté au réseau.";
+            }
+        }
+    }
+    private async Task SendModeVeille(Computer computer)
+    {
+        var ordi = await ComputerService.GetByConnexionAsync(computer.Id);
+        if (ordi.Connections is not null)
+        {
+            var connection = ordi.Connections.Last();
+            await hubConnection.SendAsync("SendModeVeille", connection.ConnectionID);
+        }
+    }
+    private async Task SendModeOff(int computerId)
+    {
+        WakeRequest wakeRequest = new WakeRequest();
+        
+    }
+    private async void AjouterOuMettreAJour(List<NetworkInfo> liste, NetworkInfo nouvelObjet)
+    {
+        var objetExistant = liste.FirstOrDefault(o => o.FootPrint == nouvelObjet.FootPrint);
+
+        if (objetExistant != null)
+        {
+            // Mise à jour de l'objet existant
+            objetExistant.IPAddress = nouvelObjet.IPAddress;
+            objetExistant.DNServers = nouvelObjet.DNServers;
+            objetExistant.Status = nouvelObjet.Status;
+            objetExistant.SubnetMask = nouvelObjet.SubnetMask;
+            objetExistant.DefaultGateway = nouvelObjet.DefaultGateway;
+            await NetworkService.UpdateAsync(objetExistant);
+        }
+        else
+        {
+            string footPrint =  string.Empty;
+            if (nouvelObjet.FootPrint is not null)
+            {
+                Computer computerNetwork = await ComputerService.GetByFootPrintAsync(nouvelObjet.FootPrint);
+                nouvelObjet.ComputerId = computerNetwork.Id;
+                await NetworkService.CreateAsync(nouvelObjet);
+            }
+        }
+    }
+    private static void AjouterOuMettreAJourImage(List<ShareScreen> liste, ShareScreen nouvelObjet)
+    {
+        var objetExistant = liste.FirstOrDefault(o => o.CarteMere == nouvelObjet.CarteMere);
+
+        if (objetExistant != null)
+        {
+            // Mise à jour de l'objet existant
+            objetExistant.ImageData = nouvelObjet.ImageData;
+        }
+        else
+        {
+            // Ajout du nouvel objet dans la liste
+            liste.Add(nouvelObjet);
+        }
+    }
+    private async Task Send()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("SendMessage", userInput, messageInput);
+        }
+    }
+    private void ActiverPleinEcran()
+    {
+        pleinEcran = true;
+    }
+    private void FermerPleinEcran()
+    {
+        pleinEcran = false;
+    }
+    private void ShowComputer(Computer computer)
+    {
+        showComputer = computer;
+        isShowFormVisible = true;
+    }
+
+    private void DisplayShare(int id)
+    {
+        NavigationManager.NavigateTo($"/displayShare/{id}");
+    }
+
+    private void EditModel(Computer Computer)
+    {
+        selectedModel = Computer;
+        // Naviguez vers la page d'édition ou affichez un formulaire d'édition dans ce composant.
+    }
+    private void AddModel()
+    {
+        // Naviguer vers la page d'ajout, par exemple, "/addmymodel"
+        //NavigationManager.NavigateTo("/addmymodel");
+    }
+
+    private async void DeleteModel(int id)
+    {
+        await ComputerService.DeleteAsync(id);
+        computers = await ComputerService.GetAllAsync();
+    }
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if(hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+    private void OpenDialogAddForm()
+    {
+        isAddFormVisible = true;
+    }
+    private void CloseDialogAddForm()
+    {
+        isAddFormVisible = false;
+    }
+
+    private void OpenDialogEditForm(Computer computer)
+    {
+        editComputer = computer;
+        isEditFormvisible = true;
+    }
+    private void OpenDialogDeleteForm(Computer computer)
+    {
+        deleteComputer = computer;
+        isDeleteFormVisible = true;
+    }
+
+    private void CloseDialogEditForm()
+    {
+        isEditFormvisible = false;
+    }
+    private void CloseDialogDeleteForm()
+    {
+        deleteComputer = new Computer();
+        isDeleteFormVisible = false;
+    }
+    private async void EditComputer()
+    {
+        if (editComputer != null)
+        {
+            editComputer.RoomId = editComputer.Room.Id;
+            editComputer.Room = null;
+            await ComputerService.UpdateAsync(editComputer);
+            computers = await ComputerService.GetAllByParcAsync(parcSelected.Id);
+            Snackbar.Add("L'ordinateur a été modifié", Severity.Success);
+            CloseDialogEditForm();
+            StateHasChanged();
+        }
+    }
+    private async void DeleteComputer()
+    {
+        if (deleteComputer != null)
+        {
+            await ComputerService.DeleteAsync(deleteComputer.Id);
+            deleteComputer = new Computer();
+            computers = await ComputerService.GetAllByParcAsync(parcSelected.Id);
+            Snackbar.Add("La salle a été supprimé", Severity.Success);
+        }
+        CloseDialogDeleteForm();
+        StateHasChanged();
+    }
+}

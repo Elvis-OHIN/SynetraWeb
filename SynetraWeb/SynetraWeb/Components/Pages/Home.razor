@@ -1,7 +1,151 @@
-ï»¿@page "/"
 
-<PageTitle>Home</PageTitle>
+@page "/"
 
-<h1>Hello, world!</h1>
+@using Microsoft.AspNetCore.SignalR.Client;
+@using SynetraUtils.Models.DataManagement;
+@using SynetraWeb.Client.Services;
+@inject NavigationManager NavigationManager
+@inject ComputerService ComputerService
+@inject ParcService ParcService
+@inject RoomService RoomServices
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using System.Security.Claims
 
-Welcome to your new app.
+@inject AuthenticationStateProvider AuthenticationStateProvider
+<h3>Dashboard</h3>
+
+<MudSelect T="Parc" Label="Sélectionnez un parc" Value="selectedParc" ValueChanged="OnParcChanged" Class="mb-4">
+    @foreach (var parc in parcs)
+    {
+        <MudSelectItem T="Parc" Value="parc">@parc.Name</MudSelectItem>
+    }
+</MudSelect>
+
+<MudGrid Spacing="3">
+    <MudItem xs="12" sm="4">
+        <MudPaper Class="pa-4 same-height">
+            <MudText Typo="Typo.h6" Color="Color.Dark">Nombre total d'ordinateurs</MudText>
+            <MudText Typo="Typo.h4">@totalComputers</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4 same-height">
+            <MudText Typo="Typo.h6" Color="Color.Dark">Nombre d'ordinateurs actifs</MudText>
+            <MudText Typo="Typo.h4">@activeComputers</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4 same-height">
+            <MudText Typo="Typo.h6" Color="Color.Dark">Ordinateurs par OS</MudText>
+            <ul>
+                @foreach (var osStat in computersByOS)
+                {
+                    <li>@osStat.Key : @osStat.Value</li>
+                }
+            </ul>
+        </MudPaper>
+    </MudItem>  
+
+      <MudItem xs="12" sm="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h5" Color="Color.Primary">Ordinateurs par système d'exploitation</MudText>
+            <MudChart ChartType="ChartType.Bar" ChartSeries="@osSeries" XAxisLabels="@osXAxisLabels" Width="500px" Height="350px"></MudChart>
+        </MudPaper>
+    </MudItem>
+
+      <MudItem xs="12" sm="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h5" Color="Color.Primary">Répartition des ordinateurs actifs et inactifs</MudText>
+            <MudChart ChartType="ChartType.Pie" InputLabels="@labelsPie"  InputData="@statusSeries" Width="500px" Height="350px"></MudChart>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<style>
+    .same-height {
+        height: 150px;
+    }
+</style>
+
+@code {
+
+    public List<ChartSeries> Series = new List<ChartSeries>();
+
+    public string[] XAxisLabels = [];
+
+    private List<Parc> parcs = new List<Parc>();
+
+    private Parc selectedParc;
+
+    private int totalComputers;
+    private int activeComputers;
+    private Dictionary<string, int> computersByOS = new Dictionary<string, int>();
+
+    public List<ChartSeries> osSeries = new List<ChartSeries>();
+    public string[] osXAxisLabels = [];
+
+    public double[] statusSeries = [];
+
+    public List<ChartSeries> roomSeries = new List<ChartSeries>();
+    public string[] roomXAxisLabels = [];
+
+    string[] labelsPie = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        parcs = await ParcService.GetAllAsync();
+        if (parcs.Count > 0)
+        {
+            selectedParc = parcs.FirstOrDefault();
+        }
+        await LoadAllDataAsync();
+    }
+
+    private async Task LoadAllDataAsync()
+    {
+        if (selectedParc != null)
+        {
+            var computers = await ComputerService.GetAllAsync();
+            var selectedComputers = computers.Where(c => c.ParcId != null && c.ParcId == selectedParc.Id).ToList();
+
+            LoadTotalAndActiveComputersAsync(selectedComputers);
+            LoadComputersByOSAsync(selectedComputers);
+            LoadComputersByStatus(selectedComputers);
+        }
+    }
+
+    private void LoadTotalAndActiveComputersAsync(List<Computer> selectedComputers)
+    {
+        totalComputers = selectedComputers.Count;
+        activeComputers = selectedComputers.Count(c => c.IsActive);
+    }
+
+    private void LoadComputersByStatus(List<Computer> selectedComputers)
+    {
+        var activeComputersCount = selectedComputers.Count(c => c.IsActive);
+        var inactiveComputersCount = selectedComputers.Count(c => !c.IsActive);
+        statusSeries = new double[] { activeComputersCount, inactiveComputersCount };
+        labelsPie = new string[] { "Active", "Inactive" };
+    }
+
+    private void LoadComputersByOSAsync(List<Computer> selectedComputers)
+    {
+        computersByOS = selectedComputers
+            .GroupBy(c => c.OperatingSystem)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        osXAxisLabels = computersByOS.Keys.ToArray();
+        var osData = computersByOS.Values.Select(v => (double)v).ToArray();
+
+        osSeries.Clear();
+        osSeries.Add(new ChartSeries() { Name = "Ordinateurs", Data = osData });
+    }
+
+    private async void OnParcChanged(Parc parc)
+    {
+        selectedParc = parc;
+        await LoadAllDataAsync();
+        StateHasChanged();
+    }
+}

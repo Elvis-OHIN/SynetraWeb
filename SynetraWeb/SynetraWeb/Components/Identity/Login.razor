@@ -1,0 +1,124 @@
+﻿@layout Layout.LoginLayout; 
+@page "/login"
+@attribute [AllowAnonymous]
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using SynetraWeb.Client.Authentications
+@using SynetraWeb.Client.Identity
+
+@using SynetraWeb.Data
+
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject ILogger<Login> Logger
+@inject NavigationManager NavigationManager
+
+@inject AuthenticationStateProvider authStateProvider
+@inject IAccountManagement Acct
+
+<MudText Typo="Typo.h4" GutterBottom="true">Sign In</MudText>
+
+<EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+    <DataAnnotationsValidator />
+    <h2>Use a local account to log in.</h2>
+    <hr />
+    <ValidationSummary class="text-danger" role="alert" />
+    <div class="form-floating mb-3">
+        <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+        <label for="email" class="form-label">Email</label>
+        <ValidationMessage For="() => Input.Email" class="text-danger" />
+    </div>
+    <div class="form-floating mb-3">
+        <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
+        <label for="password" class="form-label">Password</label>
+        <ValidationMessage For="() => Input.Password" class="text-danger" />
+    </div>
+    <div class="checkbox mb-3">
+        <label class="form-label">
+            <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
+            Remember me
+        </label>
+    </div>
+    <div>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" class="w-100 btn btn-lg btn-primary" Size="Size.Large" ButtonType="ButtonType.Submit" FullWidth="true">Log in</MudButton>        
+    </div>
+</EditForm>
+        
+@code {
+    private string? errorMessage;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpContext != null)
+        {
+            if (HttpMethods.IsGet(HttpContext.Request.Method))
+            {
+                // Clear the existing external cookie to ensure a clean login process
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            }
+        }
+
+    }
+
+    public async Task LoginUser()
+    {
+        // This doesn't count login failures towards account lockout
+        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+        HttpClient _httpClient = new HttpClient();
+        var l = new LoginModel();
+        l.Email = Input.Email;
+        l.Password = Input.Password;
+
+        var result = await Acct.LoginAsync(l.Email, l.Password);
+
+
+        if (!result.Succeeded)
+        {
+
+            return;
+        }
+
+
+
+        NavigationManager.NavigateTo($"/");
+    }
+
+    public class UserDetails
+    {
+        public string? Email { get; set; }
+        public bool IsEmailConfirmed { get; set; }
+    }
+ 
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = "";
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        [Display(Name = "Remember me?")]
+        public bool RememberMe { get; set; }
+    }
+    public class LoginResponse
+    {
+        public string? TokenType { get; set; }
+        public string? AccessToken { get; set; }
+        public string? RefreshToken { get; set; }
+    }
+
+}

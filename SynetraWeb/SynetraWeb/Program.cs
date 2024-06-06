@@ -1,9 +1,16 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor;
+using MudBlazor.Services;
+using SynetraWeb.Client.Authentications;
+using SynetraWeb.Client.Identity;
 using SynetraWeb.Client.Pages;
+using SynetraWeb.Client.Services;
 using SynetraWeb.Components;
 using SynetraWeb.Components.Account;
+using SynetraWeb.Components.Hubs;
 using SynetraWeb.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,15 +23,49 @@ builder.Services.AddRazorComponents()
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
-builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
+builder.Services.AddTransient<CookieHandler>();
+builder.Services.AddScoped<AuthenticationStateProvider, SynetraWeb.Client.Identity.CookieAuthenticationStateProvider>();
+builder.Services.AddScoped(
+    sp => (IAccountManagement)sp.GetRequiredService<AuthenticationStateProvider>());
+
+// set base address for default host
+builder.Services.AddScoped(sp =>
+    new HttpClient { BaseAddress = new Uri(builder.Configuration["FrontendUrl"] ?? "https://localhost:7052") });
+
+// configure client for auth interactions
+builder.Services.AddHttpClient(
+    "Auth",
+    opt => opt.BaseAddress = new Uri(builder.Configuration["BackendUrl"] ?? "https://localhost:7082"))
+    .AddHttpMessageHandler<CookieHandler>().SetHandlerLifetime(TimeSpan.FromHours(12));;
+builder.Services.AddScoped<ParcService>();
+builder.Services.AddScoped<ComputerService>();
+builder.Services.AddScoped<RoomService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<NetworkService>();
+builder.Services.AddScoped<WakeOnLanService>();
 
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
     })
-    .AddIdentityCookies();
-
+    .AddIdentityCookies(cookie =>
+    {
+        cookie.ApplicationCookie?.Configure(config =>
+        {
+            config.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            config.Cookie.SameSite = SameSiteMode.Strict;
+            config.Cookie.HttpOnly = true;
+            config.Cookie.IsEssential = true;
+            config.Cookie.MaxAge = TimeSpan.FromHours(2);
+        });
+    });
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
@@ -37,6 +78,28 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddControllers();
+builder.Services.AddMudServices(config =>
+{
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.TopRight;
+    config.SnackbarConfiguration.ShowCloseIcon = true;
+    config.SnackbarConfiguration.VisibleStateDuration = 1000;
+});
+builder.Services.AddResponseCompression(options =>
+{
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+        new[] { "application/octet-stream" });
+});
+
+builder.Services.AddSignalR(options =>
+{
+    options.MaximumReceiveMessageSize = null;
+    options.StreamBufferCapacity = null;
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -53,9 +116,11 @@ else
 }
 
 app.UseHttpsRedirection();
-
+app.UseResponseCompression();
+app.MapHub<ShareHub>("/sharehub");
 app.UseStaticFiles();
 app.UseAntiforgery();
+
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
