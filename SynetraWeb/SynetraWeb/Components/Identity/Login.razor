@@ -23,7 +23,7 @@
 
 <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
     <DataAnnotationsValidator />
-    <h2>Use a local account to log in.</h2>
+    <h2>Connexion</h2>
     <hr />
     <ValidationSummary class="text-danger" role="alert" />
     <div class="form-floating mb-3">
@@ -35,12 +35,6 @@
         <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
         <label for="password" class="form-label">Password</label>
         <ValidationMessage For="() => Input.Password" class="text-danger" />
-    </div>
-    <div class="checkbox mb-3">
-        <label class="form-label">
-            <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
-            Remember me
-        </label>
     </div>
     <div>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" class="w-100 btn btn-lg btn-primary" Size="Size.Large" ButtonType="ButtonType.Submit" FullWidth="true">Log in</MudButton>        
