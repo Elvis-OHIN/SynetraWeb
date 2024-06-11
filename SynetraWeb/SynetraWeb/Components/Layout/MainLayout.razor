@@ -23,14 +23,8 @@
         <MudSpacer />
         <MudMenu Class="mt-1 ml-4">
             <ActivatorContent>
-                <MudAvatar Image="https://i.ibb.co/FWr5ChS/Capture-d-cran-1.png" />
+                <MudListItem Text="Se Déconnecter" IconColor="Color.Default" Href="logout" />
             </ActivatorContent>
-            <ChildContent>
-              
-                <MudDivider Class="mb-2" />
-                <MudListItem Text="Account" Icon="@Icons.Material.Outlined.Person" Href="/personal/account" />
-                <MudListItem Text="Logout" Icon="@Icons.Material.Outlined.Login" Href="/pages/authentication/login" />
-            </ChildContent>
         </MudMenu>
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">

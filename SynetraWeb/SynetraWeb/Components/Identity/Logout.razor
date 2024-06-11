@@ -1,0 +1,19 @@
+@page "/logout"
+@using SynetraWeb.Client.Identity
+
+@inject NavigationManager NavigationManager
+
+@inject AuthenticationStateProvider authStateProvider
+@inject IAccountManagement Acct
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        if (await Acct.CheckAuthenticatedAsync())
+        {
+            await Acct.LogoutAsync();
+        }
+        
+        NavigationManager.NavigateTo($"/login");
+    }
+}
