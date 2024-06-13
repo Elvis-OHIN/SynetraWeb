@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-SynetraWeb-6864c2ec-ae4c-44b4-a4ac-349f7d73e605</UserSecretsId>
+    <AssemblyVersion>1.5.2</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -34,21 +34,22 @@ namespace SynetraWeb.Components.Hubs
             var param2 = Context.GetHttpContext().Request.Query["key"];
             var param3 = Context.GetHttpContext().Request.Query["iv"];
             
-            // Decrypt the bytes to a string.
-            //string decrypted = HardwareIdentifier.DecryptStringFromBytes_Aes(Convert.FromBase64String(param1), Convert.FromBase64String(param2), Convert.FromBase64String(param3) );
-
             if (param1 != "")
             {
                 var c = await _computerService.GetByFootPrintAsync(param1);
+                
+                
                 if (c != null)
                 {
+                    c.Statut = true;
                     Connection conn = new Connection();
                     conn.Connected = true;
                     conn.ConnectionID = Context.ConnectionId;
                     conn.ComputerId = c.Id;
                     conn.UserAgent = Context.GetHttpContext().Request.Headers["User-Agent"];
                     await _computerService.CreateConnexionAsync(c.Id, conn);
-                }   
+                    await _computerService.UpdateAsync(c);
+                }
             }
 
             return base.OnConnectedAsync();
@@ -56,6 +57,13 @@ namespace SynetraWeb.Components.Hubs
         
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
+            var computer = await _computerService.GetByConnexionIdAsync(Context.ConnectionId);
+            if (computer is not null)
+            {
+                computer.Statut = false;
+                await _computerService.UpdateAsync(computer);
+            }
+            
             await base.OnDisconnectedAsync(exception);
         }
         public async Task SendInfoOfPc(Computer computer)
@@ -73,7 +81,6 @@ namespace SynetraWeb.Components.Hubs
                     await _computerService.CreateConnexionAsync(c.Id, conn);
                 }
             }
-            //refresh message
         }
         public Task SendImageMessage(ImageMessage file)
         {
@@ -90,32 +97,32 @@ namespace SynetraWeb.Components.Hubs
 
         public async Task SendModeOff(string userId)
         {
-            await Clients.User(userId).SendAsync("ReceiveModeOff", "Off");
+            await Clients.Client(userId).SendAsync("ReceiveModeOff", "Off");
         }
 
         public async Task SendDataOfPc(string userId)
         {
-            await Clients.User(userId).SendAsync("ReceiveDataOfPc" , "start");
+            await Clients.Client(userId).SendAsync("ReceiveDataOfPc" , "start");
         }
-        public async Task SendMessage(string title, string message)
+        public async Task SendMessage(string title, string message , string userid)
         {
-            await Clients.All.SendAsync("ReceiveMessage", title, message);
+            await Clients.Client(userid).SendAsync("ReceiveMessage", title, message);
         }
         public Task SendNetworkInfo(NetworkInfo networkInfo)
         {
            return Clients.All.SendAsync("ReceiveNetworkInfo", networkInfo);
         }
-        public async Task SendMouseMovement(double x, double y ,  double height , double width)
+        public async Task SendMouseMovement(double x, double y ,  double height , double width , string userid)
         {
-            await Clients.Others.SendAsync("ReceiveMouseMovement", x, y , height , width);
+            await Clients.Client(userid).SendAsync("ReceiveMouseMovement", x, y , height , width);
         }
-        public async Task SendKeyPress(string key)
+        public async Task SendKeyPress(string key, string userid)
         {
-            await Clients.Others.SendAsync("ReceiveKeyPress", key);
+            await Clients.Client(userid).SendAsync("ReceiveKeyPress", key);
         }
-        public async Task SendClickPress(string key)
+        public async Task SendClickPress(string key , string userid)
         {
-            await Clients.Others.SendAsync("ReceiveClickPress", key);
+            await Clients.Client(userid).SendAsync("ReceiveClickPress", key);
         }
     }
 }

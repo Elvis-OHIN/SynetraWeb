@@ -29,14 +29,14 @@
 .top-content {
     width: 100%;
     padding: 20px;
-    text-align: center; /* Centrer le texte à l'intérieur de la div */
-    /* Ajoutez d'autres styles selon vos besoins, comme la couleur de fond, etc. */
+    text-align: center; 
+  
 }
 
 .full-screen-image-container {
-    position: relative; /* Changez à 'fixed' si vous voulez que l'image reste en place lors du défilement */
+    position: relative; 
     width: 100vw;
-    height: calc(100vh - 60px); /* Ajustez la hauteur en soustrayant la hauteur de la div du haut */
+    height: calc(100vh - 60px); 
     overflow: hidden;
 }
 
@@ -53,8 +53,8 @@
     function setupMousePositionListener(dotNetReference) {
         document.getElementById('DisplayScreen').addEventListener('mousemove', function (event) {
             var rect = this.getBoundingClientRect();
-            var x = parseInt(event.clientX - rect.left, 10); // S'assurer que x est un entier
-            var y = parseInt(event.clientY - rect.top, 10); // S'assurer que y est un entier
+            var x = parseInt(event.clientX - rect.left, 10); 
+            var y = parseInt(event.clientY - rect.top, 10); 
             dotNetReference.invokeMethodAsync('ReceiveMousePosition', x, y, document.getElementById('DisplayScreen').offsetHeight, document.getElementById('DisplayScreen').offsetWidth);
         });
     }
@@ -92,6 +92,7 @@
     [Parameter]
     public int userId { get; set; }
     public Computer computers;
+    private string connexionId;
     private string lastKeyPressed;
     private HubConnection? hubConnection;
     private List<ShareScreen> messages = new List<ShareScreen>();
@@ -118,8 +119,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-       
-        computers = await ComputerService.GetByIdAsync(userId);
+
+        computers = await ComputerService.GetByConnexionAsync(userId);
+        connexionId = computers.Connections.LastOrDefault().ConnectionID;
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/sharehub"))
             .Build();
@@ -141,12 +143,10 @@
 
         if (objetExistant != null)
         {
-            // Mise à jour de l'objet existant
             objetExistant.ImageData = nouvelObjet.ImageData;
         }
         else
         {
-            // Ajout du nouvel objet dans la liste
             liste.Add(nouvelObjet);
         }
     }
@@ -154,21 +154,18 @@
     [JSInvokable]
     public async Task ReceiveMousePosition(int x, int y, int height, int width)
     {
-        // Votre logique ici
         mouseX = x;
         mouseY = y;
 
-        await hubConnection.InvokeAsync("SendMouseMovement", x, y, height, width);
+        await hubConnection.InvokeAsync("SendMouseMovement", x, y, height, width, connexionId);
         StateHasChanged();
     }
     [JSInvokable]
     public async Task HandleKeyPressWithMouseInside(string key)
     {
-
-        // Implémentez ici la logique souhaitée
         lastKeyPressed = key;
 
-        await hubConnection.InvokeAsync("SendKeyPress", key);
+        await hubConnection.InvokeAsync("SendKeyPress", key, connexionId);
         StateHasChanged();
     }
 
@@ -177,8 +174,7 @@
     {
         clic = "Droit";
         StateHasChanged();
-        // Effectuez ici des actions supplémentaires
-        await hubConnection.InvokeAsync("SendClickPress", clic);
+        await hubConnection.InvokeAsync("SendClickPress", clic, connexionId);
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

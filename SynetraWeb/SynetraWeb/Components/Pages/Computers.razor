@@ -207,9 +207,9 @@ else
                 </MudCardContent>
                 <MudCardActions Class="d-flex justify-content-center">
                     <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="() => SendWakeOnLan(showComputer)">Allumer</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="() => SendModeOff(showComputer.Id)">Éteindre</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="() => SendModeOff(showComputer)">Éteindre</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="() => SendModeVeille(showComputer)">Mettre en veille</MudButton>
-                    <MudButton OnClick="() => DisplayShare(showComputer.Id)" Variant="Variant.Filled" Color="Color.Info">Contrôler l'ordinateur</MudButton>
+                    <MudButton OnClick="() => DisplayShare(showComputer)" Variant="Variant.Filled" Color="Color.Info">Contrôler l'ordinateur</MudButton>
                 </MudCardActions>
                 <p>@resultWoL</p>
             </MudCard>
@@ -427,16 +427,21 @@ else
     private async Task SendModeVeille(Computer computer)
     {
         var ordi = await ComputerService.GetByConnexionAsync(computer.Id);
-        if (ordi.Connections is not null)
+        if (ordi.Connections.Count > 0)
         {
             var connection = ordi.Connections.Last();
             await hubConnection.SendAsync("SendModeVeille", connection.ConnectionID);
         }
     }
-    private async Task SendModeOff(int computerId)
+    private async Task SendModeOff(Computer computer)
     {
-        WakeRequest wakeRequest = new WakeRequest();
-        
+        var ordi = await ComputerService.GetByConnexionAsync(computer.Id);
+        if (ordi.Connections.Count > 0)
+        {
+            var connection = ordi.Connections.Last();
+            await hubConnection.SendAsync("SendModeOff", connection.ConnectionID);
+        }
+
     }
     private async void AjouterOuMettreAJour(List<NetworkInfo> liste, NetworkInfo nouvelObjet)
     {
@@ -482,7 +487,17 @@ else
     {
         if (hubConnection is not null)
         {
-            await hubConnection.SendAsync("SendMessage", userInput, messageInput);
+            var pc = await ComputerService.GetByConnexionAsync(showComputer.Id);
+            if (pc is not null)
+            {
+                var connec = pc.Connections.LastOrDefault();
+                if (connec is not null)
+                {
+                    var connectionId = connec.ConnectionID;
+                    await hubConnection.SendAsync("SendMessage", userInput, messageInput, connectionId);
+                }
+            }
+           
         }
     }
     private void ActiverPleinEcran()
@@ -499,20 +514,17 @@ else
         isShowFormVisible = true;
     }
 
-    private void DisplayShare(int id)
+    private void DisplayShare(Computer computer)
     {
-        NavigationManager.NavigateTo($"/displayShare/{id}");
+        if (computer.Statut == true)
+        {
+            NavigationManager.NavigateTo($"/displayShare/{computer.Id}");
+        }
     }
 
     private void EditModel(Computer Computer)
     {
         selectedModel = Computer;
-        // Naviguez vers la page d'édition ou affichez un formulaire d'édition dans ce composant.
-    }
-    private void AddModel()
-    {
-        // Naviguer vers la page d'ajout, par exemple, "/addmymodel"
-        //NavigationManager.NavigateTo("/addmymodel");
     }
 
     private async void DeleteModel(int id)

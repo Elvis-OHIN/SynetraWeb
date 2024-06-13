@@ -7,6 +7,7 @@
 @inject UserService UserService
 @inject ISnackbar Snackbar
 @inject RoleService RoleService
+@inject ParcService ParcService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @attribute [Authorize(Roles = "SuperAdmin")]
 
@@ -34,6 +35,12 @@
                                   For="@(() => newUser.Email)"></MudTextField>
                     <MudTextField Label="Password" InputType="InputType.Password" @bind-Value="newUser.PasswordHash"
                                   For="@(() => newUser.Email)"></MudTextField>
+                    <MudSelect Label="Parcs" @bind-Value="newUser.Parc" Variant="Variant.Filled" FullWidth>
+                        @foreach (var parc in parcs)
+                        {
+                            <MudSelectItem Value="@parc" />
+                        }
+                    </MudSelect>
                     <MudSelect Label="Role" SelectAll="true" T="IdentityRole<int>" SelectAllText="Sélectionnez tous les rôles" @bind-SelectedValues="options" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))" @bind-Value="identityRole" Variant="Variant.Filled" MultiSelection="true" FullWidth>
                         @foreach (var role in roles)
                         {
@@ -61,6 +68,7 @@ else
         <MudTh>Prénom</MudTh>
         <MudTh>Nom</MudTh>
         <MudTh>Email</MudTh>
+        <MudTh>Parc</MudTh>
         <MudTh>Roles</MudTh>
         <MudTh>Actif</MudTh>
         <MudTh>Date de création</MudTh>
@@ -69,10 +77,10 @@ else
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Id">@context.Id</MudTd>
-            <MudTd DataLabel="Prénom">@context.Firstname</MudTd>
-            <MudTd DataLabel="Nom">@context.Lastname</MudTd>
+        <MudTd DataLabel="Prénom">@context.Firstname</MudTd>
+        <MudTd DataLabel="Nom">@context.Lastname</MudTd>
         <MudTd DataLabel="Email">@context.Email</MudTd>
-
+        <MudTd DataLabel="Parc">@context.ParcId</MudTd>
         <MudTd DataLabel="Roles">
            @foreach (var userRoleCurrent in userRoles)
            {
@@ -130,6 +138,12 @@ else
                                       For="@(() => editUser.Email)"></MudTextField>
                         <MudTextField Label="Password" InputType="InputType.Password" @bind-Value="editUser.PasswordHash"
                                       For="@(() => editUser.Email)"></MudTextField>
+                        <MudSelect Label="Parc" @bind-Value="editUser.Parc" Variant="Variant.Filled" FullWidth>
+                         @foreach (var parc in parcs)
+                            {
+                                <MudSelectItem Value="@parc" />
+                            }
+                        </MudSelect>
                         <MudSelect Label="Role" SelectAll="true" T="IdentityRole<int>" SelectAllText="Sélectionnez tous les rôles" @bind-SelectedValues="options" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))" @bind-Value="identityRole" Variant="Variant.Filled" MultiSelection="true" FullWidth>
                          @foreach (var role in roles)
                             {
@@ -163,6 +177,7 @@ else
     private List<IdentityRole<int>> roles = new List<IdentityRole<int>>();
     private List<IdentityRole<int>> rolesSelected = new List<IdentityRole<int>>();
     private List<IdentityUserRole<int>> userRoles = new List<IdentityUserRole<int>>();
+    private List<Parc> parcs = new List<Parc>();
     private DataGridFilterMode _filterMode = DataGridFilterMode.Simple;
     private IEnumerable<IdentityRole<int>> options { get; set; } = new HashSet<IdentityRole<int>>();
     private bool _dragDropReorderingEnabled = true;
@@ -210,6 +225,7 @@ else
         email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
         users = await UserService.GetAllExceptCurrentUserAsync(email);
         roles = await RoleService.GetAllAsync(); 
+        parcs = await ParcService.GetAllAsync();
         userRoles = await UserService.GetAllRoleAsync();
     }
     private async void AddUser()
@@ -217,7 +233,8 @@ else
 
         if (newUser != null)
         {
-
+            newUser.ParcId = newUser.Parc.Id;
+            newUser.Parc = null;
             var userId = await UserService.CreateAsync(newUser);
             foreach (var roles in options)
             {
@@ -243,6 +260,8 @@ else
     {
         if (editUser != null)
         {
+            editUser.ParcId = editUser.Parc.Id;
+            editUser.Parc = null;
             await UserService.UpdateAsync(editUser);
             users = await UserService.GetAllExceptCurrentUserAsync(email);
             Snackbar.Add("L'utilisateur à été modifié", Severity.Success);
