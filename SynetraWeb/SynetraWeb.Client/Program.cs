@@ -30,7 +30,7 @@ builder.Services.AddHttpClient(
 
 builder.Services.AddHttpClient<ParcService>(
     "Auth",
-    opt => opt.BaseAddress = new Uri(builder.Configuration["BackendUrl"] ?? "https://localhost:7082"))
+    opt => opt.BaseAddress = new Uri(builder.Configuration["BackendUrl"] + "/" ?? "https://localhost:7082"))
     .AddHttpMessageHandler<CookieHandler>();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddMudServices(config =>

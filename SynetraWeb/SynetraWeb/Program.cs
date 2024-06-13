@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using MudBlazor;
 using MudBlazor.Services;
+using SynetraWeb.Client;
 using SynetraWeb.Client.Authentications;
 using SynetraWeb.Client.Identity;
 using SynetraWeb.Client.Pages;
@@ -35,7 +37,7 @@ builder.Services.AddScoped(sp =>
 // configure client for auth interactions
 builder.Services.AddHttpClient(
     "Auth",
-    opt => opt.BaseAddress = new Uri(builder.Configuration["BackendUrl"] ?? "https://localhost:7082"))
+    opt => opt.BaseAddress = new Uri(builder.Configuration["BackendUrl"] + "/" ?? "https://localhost:7082"))
     .AddHttpMessageHandler<CookieHandler>().SetHandlerLifetime(TimeSpan.FromHours(12));;
 builder.Services.AddScoped<ParcService>();
 builder.Services.AddScoped<ComputerService>();
@@ -54,6 +56,7 @@ builder.Services.AddAuthentication(options =>
     {
         cookie.ApplicationCookie?.Configure(config =>
         {
+            //config.LoginPath = "/blazor_elvis/Account/Login";
             config.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             config.Cookie.SameSite = SameSiteMode.Strict;
             config.Cookie.HttpOnly = true;
@@ -101,7 +104,10 @@ builder.Services.AddSignalR(options =>
 });
 builder.Services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
 var app = builder.Build();
-
+//app.UseMiddleware<GlobalRoutePrefixMiddleware>("/blazor_elvis");
+//app.UsePathBase("/blazor_elvis");
+//app.UseAuthorization();
+//app.UseRouting();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

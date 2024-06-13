@@ -56,6 +56,17 @@ namespace SynetraWeb.Client.Services
             }
             return null;
         }
+        public async Task<Computer> GetByConnexionIdAsync(string connexion)
+        {
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            HttpResponseMessage response = await _httpClient.GetAsync($"api/Computers/Statut/{connexion}");
+            if (response.IsSuccessStatusCode)
+            {
+                Computer jsonResponse = await response.Content.ReadFromJsonAsync<Computer>();
+                return jsonResponse;
+            }
+            return null;
+        }
         public async Task<Computer> CreateConnexionAsync(int id,Connection connection)
         {
             HttpClient _httpClient = ClientFactory.CreateClient("Auth");
