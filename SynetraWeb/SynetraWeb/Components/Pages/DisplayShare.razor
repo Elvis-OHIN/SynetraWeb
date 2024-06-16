@@ -12,7 +12,6 @@
 
 
 <div class="top-content">
-    Contenu ici, par exemple un titre ou un message.
 </div>
 
 <div class="full-screen-image-container" id="DisplayScreen" @onclick="HandleMouseClickWithArgs" @onkeyup="HandleKeyPress" tabindex="0" >
@@ -114,7 +113,7 @@
             2 => "Droit",
             _ => "Inconnu"
         };
-        await hubConnection.InvokeAsync("SendClickPress", clic);
+        await hubConnection.InvokeAsync("SendClickPress", clic, connexionId);
     }
 
     protected override async Task OnInitializedAsync()
