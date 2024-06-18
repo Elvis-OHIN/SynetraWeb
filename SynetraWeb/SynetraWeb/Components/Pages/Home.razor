@@ -8,6 +8,7 @@
 @inject ComputerService ComputerService
 @inject ParcService ParcService
 @inject RoomService RoomServices
+@inject UserService UserService
 @rendermode InteractiveServer
 @attribute [Authorize]
 @using System.Security.Claims
@@ -15,12 +16,15 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 <h3>Dashboard</h3>
 
-<MudSelect T="Parc" Label="Sélectionnez un parc" Value="selectedParc" ValueChanged="OnParcChanged" Class="mb-4">
-    @foreach (var parc in parcs)
-    {
-        <MudSelectItem T="Parc" Value="parc">@parc.Name</MudSelectItem>
-    }
-</MudSelect>
+@if(isSuper){
+
+    <MudSelect T="Parc" Label="Sélectionnez un parc" Value="selectedParc" ValueChanged="OnParcChanged" Class="mb-4">
+        @foreach (var parc in parcs)
+        {
+            <MudSelectItem T="Parc" Value="parc">@parc.Name</MudSelectItem>
+        }
+    </MudSelect>
+}
 
 <MudGrid Spacing="3">
     <MudItem xs="12" sm="4">
@@ -91,10 +95,23 @@
     public string[] roomXAxisLabels = [];
 
     string[] labelsPie = [];
-
+    private bool isSuper = true;
     protected override async Task OnInitializedAsync()
     {
-        parcs = await ParcService.GetAllAsync();
+        var user = await UserService.GetMe();
+        if (user is not null)
+        {
+            if (user.ParcId is not null)
+            {
+                isSuper = false;
+                parcs.Add(new Parc { Id = (int)user.ParcId });
+            }
+            else
+            {
+                parcs = await ParcService.GetAllAsync();
+            }
+        }
+        
         if (parcs.Count > 0)
         {
             selectedParc = parcs.FirstOrDefault();

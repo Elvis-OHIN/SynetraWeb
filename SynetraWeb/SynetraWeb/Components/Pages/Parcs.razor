@@ -9,6 +9,7 @@
 @inject ISnackbar Snackbar
 @inject ParcService ParcService
 @inject IHttpClientFactory ClientFactory
+@attribute [Authorize(Roles = "SuperAdmin")]
 
 @rendermode InteractiveServer
 

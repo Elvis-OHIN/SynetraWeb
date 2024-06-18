@@ -4,7 +4,9 @@
 
 <MudNavMenu Rounded="true" Margin="Margin.Normal" Color="Color.Primary" Class="pa-2">
     <MudNavLink Href="" Match="NavLinkMatch.All"  Icon="@Icons.Material.Filled.Home">Dashboard</MudNavLink>
-    <MudNavLink Href="parcs" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Storage">Parc</MudNavLink>
+    <AuthorizeView Roles="SuperAdmin">
+        <MudNavLink Href="parcs" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Storage">Parc</MudNavLink>
+    </AuthorizeView>
     <MudNavLink Href="rooms" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MeetingRoom">Salles</MudNavLink>
     <MudNavLink Href="computers" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Computer">Ordinateurs</MudNavLink>
     <AuthorizeView Roles="SuperAdmin">
