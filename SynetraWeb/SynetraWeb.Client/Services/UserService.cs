@@ -1,7 +1,11 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using SynetraUtils.Models.DataManagement;
+using System.Net.Http.Headers;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Security.Principal;
+using static Org.BouncyCastle.Math.EC.ECCurve;
+using System.Text.Json.Serialization;
 
 namespace SynetraWeb.Client.Services
 {
@@ -50,7 +54,14 @@ namespace SynetraWeb.Client.Services
             }
             return 0;
         }
-       
+
+        public async Task<User> GetMe()
+        {
+            HttpClient _httpClient = ClientFactory.CreateClient("Auth");
+            var userResponse = await _httpClient.GetFromJsonAsync<User>($"api/Users/Me");
+            return userResponse;
+        }
+
         public async Task<List<IdentityUserRole<int>>> GetAllRoleAsync()
         {
             List<IdentityUserRole<int>> userRole = new List<IdentityUserRole<int>>();

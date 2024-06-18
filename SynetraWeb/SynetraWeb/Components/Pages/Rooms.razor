@@ -8,6 +8,7 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject RoomService RoomService
+@inject UserService UserService
 @attribute [Authorize]
 @using System.Security.Claims
 
@@ -50,18 +51,23 @@
 else
 {
 
- 
-    <MudStack Row="true" Justify="Justify.FlexEnd">
-        <MudSpacer />
-        <MudSpacer />
-        <MudSpacer />
-        <MudSelect T="Parc" Value="@parcSelected" ValueChanged="OnValueChanged" Label="Parc" Variant="Variant.Outlined" Dense="true" Justify="Justify.End" FullWidth=false>
-            @foreach (Parc parcCurrent in parcs)
-            {
-                <MudSelectItem Value="@parcCurrent" />
-            }
-        </MudSelect>
+    if (isSuper)
+    {
+        <MudStack Row
+        ="true" Justify
+        ="Justify.FlexEnd">
+            <MudSpacer />
+            <MudSpacer />
+            <MudSpacer />
+            <MudSelect T="Parc" Value="@parcSelected" ValueChanged="OnValueChanged" Label="Parc" Variant="Variant.Outlined" Dense="true" Justify="Justify.End" FullWidth=false>
+                @foreach (Parc parcCurrent in parcs)
+                {
+                    <MudSelectItem Value
+                    ="@parcCurrent" />
+                }
+            </MudSelect>
     </MudStack>
+    }
     <MudSpacer/>
     <MudTable Items="rooms" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2" >
         <HeaderContent>
@@ -162,14 +168,27 @@ else
     private Room editRoom = new Room();
     private Room deleteRoom = new Room();
     private Room selectedModel;
-
+    private bool isSuper = true;
     private bool isAddFormVisible;
     private bool isEditFormvisible;
     private bool isDeleteFormVisible;
     protected override async Task OnInitializedAsync()
     {
         newRoom.IsActive = true;
-        parcs = await ParcService.GetAllAsync();
+        var user = await UserService.GetMe();
+        if (user is not null)
+        {
+            if (user.ParcId is not null)
+            {
+                isSuper = false;
+                parcs.Add(new Parc { Id = (int)user.ParcId });
+            }
+            else
+            {
+                parcs = await ParcService.GetAllAsync();
+            }
+        }
+       
         parcSelected = parcs.FirstOrDefault();
         if (parcSelected is not null)
         {

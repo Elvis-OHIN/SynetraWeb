@@ -11,6 +11,7 @@
 @inject ParcService ParcService
 @inject RoomService RoomService
 @inject NetworkService NetworkService
+@inject UserService UserService
 @inject WakeOnLanService WakeOnLanService
 @inject ISnackbar Snackbar
 @implements IAsyncDisposable
@@ -62,17 +63,21 @@
 }
 else
 {
-    <MudStack Row="true" Justify="Justify.FlexEnd">
-        <MudSpacer />
-        <MudSpacer />
-        <MudSpacer />
-        <MudSelect T="Parc" Value="@parcSelected" ValueChanged="OnValueChanged" Label="Parc" Variant="Variant.Outlined" Dense="true" Justify="Justify.End" FullWidth="false">
-            @foreach (Parc parcCurrent in parcs)
-            {
-                <MudSelectItem Value="@parcCurrent" />
-            }
-        </MudSelect>
-    </MudStack>
+    if (isSuper)
+    {
+        <MudStack Row="true" Justify="Justify.FlexEnd">
+            <MudSpacer />
+            <MudSpacer />
+            <MudSpacer />
+            <MudSelect T="Parc" Value="@parcSelected" ValueChanged="OnValueChanged" Label="Parc" Variant="Variant.Outlined" Dense="true" Justify="Justify.End" FullWidth="false">
+                @foreach (Parc parcCurrent in parcs)
+                {
+                    <MudSelectItem Value="@parcCurrent" />
+                }
+            </MudSelect>
+        </MudStack>
+    }
+    
    
     <MudTable Items="computers" Hover="true" Striped="true" Dense="true" Bordered="true" Class="mb-2" GroupBy="@_groupDefinition">
         <HeaderContent>
@@ -301,6 +306,7 @@ else
     private Computer editComputer = new Computer();
     private Computer deleteComputer = new Computer();
     private string userId ;
+    private bool isSuper = true;
     private Parc parcSelected = new Parc();
     private List<Parc> parcs = new List<Parc>();
     private List<Room> rooms = new List<Room>();
@@ -346,7 +352,21 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        parcs = await ParcService.GetAllAsync();
+        var user =  await UserService.GetMe();
+        if (user is not null)
+        {
+            if (user.ParcId is not null)
+            {
+                isSuper = false;
+                parcs.Add(new Parc { Id = (int)user.ParcId});
+            
+            }
+            else
+            {
+                parcs = await ParcService.GetAllAsync();
+            }
+        }
+        
         rooms = await RoomService.GetAllAsync();
         networkInfos = await NetworkService.GetAllAsync();
         parcSelected = parcs.FirstOrDefault();
